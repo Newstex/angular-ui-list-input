@@ -1,0 +1,40 @@
+<h1><code ng:non-bindable="">listInputConfig</code>
+<div><span class="hint">service in module <code ng:non-bindable="">ui.listInput</code>
+</span>
+</div>
+</h1>
+<div><h2 id="description">Description</h2>
+<div class="description"><div class="ui-listinput-listinputconfig-page"><p>The listInputConfig service offers a provider which may be injected
+into config blocks:</p>
+<pre class="prettyprint linenums">
+angular.module('example', ['ui.listInput'])
+.config(function(listInputConfig) {
+  listInputConfig.set(listInputTemplate: 'my/custom/views/listInput.html');
+  listInputConfig.set({
+    listInputTemplate: 'my/custom/views/listInput.html'
+  });
+});
+</pre>
+</div></div>
+<div class="member method"><h2 id="methods">Methods</h2>
+<ul class="methods"><li><h3 id="methods_set">set(name, value)</h3>
+<div class="set"><div class="ui-listinput-listinputconfig-set-page"><p>This method allows global configuration options to be updated, when used within a
+config injection block.</p>
+<p>Validation is performed on configuration values and keys to ensure that they are supported
+and of an acceptable type.</p>
+</div><h5 id="methods_set_parameters">Parameters</h5><table class="variables-matrix table table-bordered table-striped"><thead><tr><th>Param</th><th>Type</th><th>Details</th></tr></thead><tbody><tr><td>name</td><td><a href="" class="label type-hint type-hint-string">string</a><a href="" class="label type-hint type-hint-object">object</a></td><td><div class="ui-listinput-listinputconfig-set-page"><p>Either the name of the property to be accessed, or an object
+containing keys and values by which to extend the configuration.</p>
+</div></td></tr><tr><td>value</td><td><a href="" class="label type-hint type-hint-object">*</a></td><td><div class="ui-listinput-listinputconfig-set-page"><p>The value to which the named key will be set provided that it is valid
+and the name is supported. See the configuration options for type requirements.</p>
+</div></td></tr></tbody></table></div>
+</li>
+</ul>
+</div>
+<div class="member property"><h2 id="properties">Properties</h2>
+<ul class="properties"><li><h3 id="properties_listinputtemplate">listInputTemplate</h3>
+<div class="listinputtemplate"><div class="ui-listinput-listinputconfig-listinputtemplate-page"><p>The template URL for . This must be a valid URL or cached ng-template.</p>
+</div></div>
+</li>
+</ul>
+</div>
+</div>
