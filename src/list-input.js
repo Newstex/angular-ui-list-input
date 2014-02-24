@@ -176,7 +176,7 @@ angular.module('ui.listInput', [])
  *   </file>
  * </example>
  */
-.directive('uiListInput', function(listInputConfig) {
+.directive('uiListInput', function(listInputConfig, $rootScope) {
 	'use strict';
 
 	// Removes non-numeric falsy values such as '', null, and undefined from the
@@ -209,8 +209,238 @@ angular.module('ui.listInput', [])
 		return listAndRemovedIndices.list;
 	}
 
+	function controller($scope, $timeout) {
+		var blurredFieldIndex = -1;
+
+		/**
+		 * @ngdoc method
+		 * @name ui.listInput.directive:uiListInput#updateItems
+		 * @function
+		 * @methodOf ui.listInput.directive:uiListInput
+		 *
+		 * @description
+		 * Removes any falsy items from the list and updates focus to
+		 * accommodate any changes in the list. The number zero, while
+		 * falsy, is not removed.
+		 *
+		 * This is generally called after a change is confirmed by the user,
+		 * such as when a field is blurred. It may not be polite to remove a
+		 * field as soon as the user deletes the last remaining character.
+		 *
+		 * The scope is updated asynchronously so as to allow the browser to
+		 * focus the next or previous input if the user pressed *Tab* or
+		 * *Shift+Tab* to change fields. This allows the intended focus to
+		 * remain active after the removal. For instance, pressing *Tab*
+		 * after removing item 1 would focus item 2. However, after item 1
+		 * is removed the original item 2 is now at position 1. Therefore we
+		 * want to focus position 1 rather than the default behavior which
+		 * would focus original item 3 now at position 2.
+		 */
+		$scope.updateItems = function() {
+			$timeout(function() {
+				var indexOfFocusedField = $scope.indexOfFocusedField(),
+				listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems($scope.form.items),
+				index;
+				var indexToFocus = indexOfFocusedField,
+				removedIndices = listAndRemovedIndices.removedIndices;
+
+				// Offset the focus by one for each item removed above the focused
+				// field
+				for (var i = 0; i < removedIndices.length; i++) {
+					index = removedIndices[i];
+
+					if (index < indexOfFocusedField) {
+						indexToFocus--;
+					}
+					else {
+						break;
+					}
+				}
+
+				$scope.items = listAndRemovedIndices.list;
+
+				if (indexToFocus >= 0) {
+					$scope.focusFieldAtIndex(indexToFocus);
+				}
+			});
+		};
+
+		/**
+		 * @ngdoc method
+		 * @name ui.listInput.directive:uiListInput#removeItemAtIndex
+		 * @function
+		 * @methodOf ui.listInput.directive:uiListInput
+		 *
+		 * @description
+		 * Removes the item at the specified index from the list and returns
+		 * focus to the previously focused field, if any.
+		 *
+		 * If the focused field is the one deleted, focus will be moved to
+		 * the last input.
+		 * 
+		 * @param {Number} index The index of the item to be removed from
+		 *     the list.
+		 */
+		$scope.removeItemAtIndex = function(index) {
+			if (index >= 0 && index < $scope.items.length) {
+				$scope.form.items.splice(index, 1);
+				$scope.items = angular.copy($scope.form.items);
+
+				if (blurredFieldIndex >= 0) {
+					// Focus bottommost field if the focused field was removed
+					if (blurredFieldIndex === index) {
+						$scope.focusFieldAtIndex($scope.items.length);
+					}
+					// Keep focus in the same field after removing the item
+					else {
+						$scope.focusFieldAtIndex((blurredFieldIndex < index) ? blurredFieldIndex : blurredFieldIndex - 1);
+						blurredFieldIndex = -1;
+					}
+				}
+			}
+		};
+
+		/**
+		 * @ngdoc method
+		 * @name ui.listInput.directive:uiListInput#didBlurFieldAtIndex
+		 * @function
+		 * @methodOf ui.listInput.directive:uiListInput
+		 *
+		 * @description
+		 * 
+		 * Tracks the last focused field for a short period of time so that
+		 * actions such as clicks that blur the field may return focus if
+		 * desired. The template should call this method on blur of any
+		 * input field.
+		 * 
+		 * @param {Number} index The index of the item that just lost focus.
+		 */
+		$scope.didBlurFieldAtIndex = function(index) {
+			blurredFieldIndex = index;
+
+			// The field may have been blurred by interacting with a
+			// different control. After 100 ms, lose track of the blurred
+			// field so that it is not programmatically refocused later
+			$timeout(function() {
+				if (blurredFieldIndex === index) {
+					blurredFieldIndex = -1;
+				}
+			}, 50);
+		};
+	}
+
+	function link(scope, element, attributes) {
+		// TODO proper prototypal child scope to avoid quirky markup changes
+		// in templates that implement this control
+		scope.parent = scope.$parent;
+
+		// Keep one extra item for the new field and update upon any
+		// internal or external changes to the items
+		scope.$watchCollection('items', function(items) {
+			if (items && !angular.equals(scope.form.items, items)) {
+				var cleanItems = listByRemovingFalsyItems(items);
+				// Ensure that falsy items are removed
+				scope.form.items = cleanItems;
+			}
+		});
+		scope.$watchCollection('form.items', function(items) {
+			scope.itemsRange = new Array(items.length + 1);
+			scope.items = angular.copy(items);
+		});
+
+		scope.form = {
+			items: listByRemovingFalsyItems(scope.items)
+		};
+
+		/**
+		 * @ngdoc method
+		 * @name ui.listInput.directive:uiListInput#focusFieldAtIndex
+		 * @function
+		 * @methodOf ui.listInput.directive:uiListInput
+		 *
+		 * @description
+		 * 
+		 * Allows the controller to move focus to a specific field.
+		 *
+		 * If the specified field is not yet added to the DOM, one attempt
+		 * will be made to focus the field after a short timeout.
+		 * 
+		 * @param {Number} index The index of the item to focus.
+		 */
+		scope.focusFieldAtIndex = function(index, secondAttempt) {
+			if (index >= 0) {
+				var inputs = element.find('input');
+				if (index < inputs.length) {
+					inputs[index].focus();
+				}
+				else if (!secondAttempt) {
+					setTimeout(function() {
+						scope.focusFieldAtIndex(index, true);
+					}, 50);
+				}
+			}
+		};
+
+		/**
+		 * @ngdoc method
+		 * @name ui.listInput.directive:uiListInput#indexOfFocusedField
+		 * @function
+		 * @methodOf ui.listInput.directive:uiListInput
+		 *
+		 * @description
+		 * 
+		 * Returns the index of the input element within the directive that
+		 * currently has focus.
+		 *
+		 * @return {Number} The index of the focused field or `-1` if no
+		 *     field is focused
+		 */
+		scope.indexOfFocusedField = function(index) {
+			var focusedField = document.activeElement;
+			var inputs = element.find('input');
+			for (var i = 0; i < inputs.length; i++) {
+				if (inputs[i] === focusedField) {
+					return i;
+				}
+			}
+			return -1;
+		};
+	}
+
+	function compile(element, attributes, transclude) {
+		// Parse any content that was included in this directive to pull out
+		// an input field 
+		// TODO: support more formal approach to customizing content within
+		// the directive
+		transclude($rootScope, function(clone) {
+			var transcluded = angular.element('<div></div>').append(clone);
+			var transcludedInput = transcluded.find('input');
+
+			// The transcluded content did not have an input, so create one.
+			if (transcludedInput.length === 0) {
+				transcludedInput = angular.element('<input name="listItem" type="text" class="form-control" />');
+			}
+
+			// Enforce a name for validation
+			transcludedInput.attr('name', 'listItem');
+
+			// Enforce a model based on repeating over the cloned items
+			transcludedInput.attr('ng-model', 'form.items[$index]');
+
+			// Ensure that everything is updated on blur and empty fields are
+			// removed
+			transcludedInput.attr('ng-blur', 'didBlurFieldAtIndex($index);updateItems()');
+
+			// There should be an <input /> placeholder in the template
+			element.find('input').replaceWith(transcludedInput);
+		});
+
+		return link;
+	}
+
 	return {
 		restrict: 'ACE',
+		transclude: true,
 		require: 'ngModel',
 		scope: {
 			items: '=ngModel'
@@ -221,198 +451,7 @@ angular.module('ui.listInput', [])
 			return listInputConfig.listInputTemplate;
 		},
 
-		controller: function($scope, $timeout) {
-			var blurredFieldIndex = -1;
-
-			/**
-			 * @ngdoc method
-			 * @name ui.listInput.directive:uiListInput#updateItems
-			 * @function
-			 * @methodOf ui.listInput.directive:uiListInput
-			 *
-			 * @description
-			 * Removes any falsy items from the list and updates focus to
-			 * accommodate any changes in the list. The number zero, while
-			 * falsy, is not removed.
-			 *
-			 * This is generally called after a change is confirmed by the user,
-			 * such as when a field is blurred. It may not be polite to remove a
-			 * field as soon as the user deletes the last remaining character.
-			 *
-			 * The scope is updated asynchronously so as to allow the browser to
-			 * focus the next or previous input if the user pressed *Tab* or
-			 * *Shift+Tab* to change fields. This allows the intended focus to
-			 * remain active after the removal. For instance, pressing *Tab*
-			 * after removing item 1 would focus item 2. However, after item 1
-			 * is removed the original item 2 is now at position 1. Therefore we
-			 * want to focus position 1 rather than the default behavior which
-			 * would focus original item 3 now at position 2.
-			 */
-			$scope.updateItems = function() {
-				$timeout(function() {
-					var indexOfFocusedField = $scope.indexOfFocusedField(),
-					listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems($scope.form.items),
-					index;
-					var indexToFocus = indexOfFocusedField,
-					removedIndices = listAndRemovedIndices.removedIndices;
-
-					// Offset the focus by one for each item removed above the focused
-					// field
-					for (var i = 0; i < removedIndices.length; i++) {
-						index = removedIndices[i];
-
-						if (index < indexOfFocusedField) {
-							indexToFocus--;
-						}
-						else {
-							break;
-						}
-					}
-
-					$scope.items = listAndRemovedIndices.list;
-
-					if (indexToFocus >= 0) {
-						$scope.focusFieldAtIndex(indexToFocus);
-					}
-				});
-			};
-
-			/**
-			 * @ngdoc method
-			 * @name ui.listInput.directive:uiListInput#removeItemAtIndex
-			 * @function
-			 * @methodOf ui.listInput.directive:uiListInput
-			 *
-			 * @description
-			 * Removes the item at the specified index from the list and returns
-			 * focus to the previously focused field, if any.
-			 *
-			 * If the focused field is the one deleted, focus will be moved to
-			 * the last input.
-			 * 
-			 * @param {Number} index The index of the item to be removed from
-			 *     the list.
-			 */
-			$scope.removeItemAtIndex = function(index) {
-				if (index >= 0 && index < $scope.items.length) {
-					$scope.form.items.splice(index, 1);
-					$scope.items = angular.copy($scope.form.items);
-
-					if (blurredFieldIndex >= 0) {
-						// Focus bottommost field if the focused field was removed
-						if (blurredFieldIndex === index) {
-							$scope.focusFieldAtIndex($scope.items.length);
-						}
-						// Keep focus in the same field after removing the item
-						else {
-							$scope.focusFieldAtIndex((blurredFieldIndex < index) ? blurredFieldIndex : blurredFieldIndex - 1);
-							blurredFieldIndex = -1;
-						}
-					}
-				}
-			};
-
-			/**
-			 * @ngdoc method
-			 * @name ui.listInput.directive:uiListInput#didBlurFieldAtIndex
-			 * @function
-			 * @methodOf ui.listInput.directive:uiListInput
-			 *
-			 * @description
-			 * 
-			 * Tracks the last focused field for a short period of time so that
-			 * actions such as clicks that blur the field may return focus if
-			 * desired. The template should call this method on blur of any
-			 * input field.
-			 * 
-			 * @param {Number} index The index of the item that just lost focus.
-			 */
-			$scope.didBlurFieldAtIndex = function(index) {
-				blurredFieldIndex = index;
-
-				// The field may have been blurred by interacting with a
-				// different control. After 100 ms, lose track of the blurred
-				// field so that it is not programmatically refocused later
-				$timeout(function() {
-					if (blurredFieldIndex === index) {
-						blurredFieldIndex = -1;
-					}
-				}, 50);
-			};
-		},
-
-		link: function(scope, element) {
-			// Keep one extra item for the new field and update upon any
-			// internal or external changes to the items
-			scope.$watchCollection('items', function(items) {
-				if (items && !angular.equals(scope.form.items, items)) {
-					var cleanItems = listByRemovingFalsyItems(items);
-					// Ensure that falsy items are removed
-					scope.form.items = cleanItems;
-				}
-			});
-			scope.$watchCollection('form.items', function(items) {
-				scope.itemsRange = new Array(items.length + 1);
-				scope.items = angular.copy(items);
-			});
-
-			scope.form = {
-				items: listByRemovingFalsyItems(scope.items)
-			};
-
-			/**
-			 * @ngdoc method
-			 * @name ui.listInput.directive:uiListInput#focusFieldAtIndex
-			 * @function
-			 * @methodOf ui.listInput.directive:uiListInput
-			 *
-			 * @description
-			 * 
-			 * Allows the controller to move focus to a specific field.
-			 *
-			 * If the specified field is not yet added to the DOM, one attempt
-			 * will be made to focus the field after a short timeout.
-			 * 
-			 * @param {Number} index The index of the item to focus.
-			 */
-			scope.focusFieldAtIndex = function(index, secondAttempt) {
-				if (index >= 0) {
-					var inputs = element.find('input');
-					if (index < inputs.length) {
-						inputs[index].focus();
-					}
-					else if (!secondAttempt) {
-						setTimeout(function() {
-							scope.focusFieldAtIndex(index, true);
-						}, 50);
-					}
-				}
-			};
-
-			/**
-			 * @ngdoc method
-			 * @name ui.listInput.directive:uiListInput#indexOfFocusedField
-			 * @function
-			 * @methodOf ui.listInput.directive:uiListInput
-			 *
-			 * @description
-			 * 
-			 * Returns the index of the input element within the directive that
-			 * currently has focus.
-			 *
-			 * @return {Number} The index of the focused field or `-1` if no
-			 *     field is focused
-			 */
-			scope.indexOfFocusedField = function(index) {
-				var focusedField = document.activeElement;
-				var inputs = element.find('input');
-				for (var i = 0; i < inputs.length; i++) {
-					if (inputs[i] === focusedField) {
-						return i;
-					}
-				}
-				return -1;
-			};
-		}
+		controller: controller,
+		compile: compile
 	};
 });
