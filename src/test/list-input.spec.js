@@ -31,7 +31,7 @@ describe('ui.listInput', function() {
 		});
 
 		$scope.$digest();
-		$directiveScope = element.isolateScope();
+		$directiveScope = element.scope();
 
 		return element;
 	}

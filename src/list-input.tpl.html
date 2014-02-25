@@ -1,10 +1,8 @@
-<ol class="list-unstyled">
-	<li ng-repeat="item in itemsRange track by $index" ng-class="{'input-group': !$last}">
-
-			<input />
-			<div class="input-group-addon btn" ng-click="removeItemAtIndex($index)" ng-hide="$last">
-				<span class="glyphicon glyphicon-remove"></span>
-			</div>
-
+<ol class="list-unstyled list-input">
+	<li ng-repeat="item in itemsRange track by $index" ng-class="{'input-group': !$last}" class="list-input-item">
+		<input />
+		<div class="input-group-addon btn" ng-click="removeItemAtIndex($index)" ng-hide="$last">
+			<span class="glyphicon glyphicon-remove"></span>
+		</div>
 	</li>
 </ol>
