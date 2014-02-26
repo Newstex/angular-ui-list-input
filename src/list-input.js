@@ -100,29 +100,13 @@ angular.module('ui.listInput', [])
  * @restrict ACE
  * 
  * @param {Array[String]} ngModel The array to edit, or a new variable in the
- *     scope into which an array can be assigned by the directive.
+ *     $scope into which an array can be assigned by the directive.
  * 
- * @property {Array[String]} $scope.items The array referenced in the
- *     `ngModel` attribute. Updates to `$scope.items` affect the parent scope.
- * @property {Array[String]} $scope.items A copy of `$scope.items` for
+ * @property {Array[String]} $scope.items A copy of the array referenced in the
+ *     `ngModel` attribute for
  *     use during editing to distinguish changes made within the directive
  *     from those made externally. All inputs within the directive should be
  *     bound to this property rather than `$scope.items`.
- * @property {Array} $scope.itemsRange An array suitable for use in a repeater
- *     that corresponds to the length of `$scope.items` plus one for entering
- *     a new item. Use `$index` in the `ngRepeat` to reference specific items
- *     in `$scope.items`.
- * 
- *     The values in this array are undefined; it is only to be used for indexed
- *     iteration. The following example uses `track by $index` to ensure that
- *     the `ngRepeat` is only re-rendered when the length of `itemsRange`
- *     changes rather than on every keystroke.
- * 
- *     ```
- *     <div ng-repeat="x in itemsRange track by $index"> 
- *         {{items[$index]}}
- *     </div>
- *     ```
  *
  * @description 
  * 
@@ -141,7 +125,7 @@ angular.module('ui.listInput', [])
  * fields. Output data will be strings only, regardless of whether the value
  * could be interpreted as a number of other type.
  *
- * ### Binding to the parent scope
+ * ### Binding to the parent $scope
  *
  * The model provided to the directive is updated in realtime with each
  * keystroke.
@@ -175,14 +159,14 @@ angular.module('ui.listInput', [])
  *   </file>
  * </example>
  */
-.directive('uiListInput', function(listInputConfig, $rootScope, $parse) {
+.directive('uiListInput', function($rootScope, $parse, $timeout) {
 	'use strict';
 
 	// Removes non-numeric falsy values such as '', null, and undefined from the
 	// source array, preserving numeric values such as 0. Returns an object
 	// containing the modified list as well as a list of all indices of falsy
 	// items that were removed.
-	function listAndRemovedIndicesByRemovingFalsyItems(sourceList) {
+	function listAndRemovedIndicesByRemovingFalsyItems(sourceList, placeholder) {
 		var list = [],
 		removedIndices = [],
 		item;
@@ -191,8 +175,8 @@ angular.module('ui.listInput', [])
 			// Remove empty or otherwise falsy items
 			for (var i = 0; i < sourceList.length; i++) {
 				item = sourceList[i];
-				if (item || angular.isNumber(item)) {
-					list.push(item);
+				if ((item || angular.isNumber(item)) && !angular.equals(item, placeholder)) {
+					list.push(angular.copy(item));
 				}
 				else {
 					removedIndices.push(i);
@@ -202,14 +186,63 @@ angular.module('ui.listInput', [])
 
 		return {list: list, removedIndices: removedIndices};
 	}
-	function listByRemovingFalsyItems(list) {
-		var listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems(list);
+	function listByRemovingFalsyItems(list, placeholder) {
+		var listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems(list, placeholder);
 
 		return listAndRemovedIndices.list;
 	}
 
-	function controller($scope, $timeout) {
+	// Sets up all interaction between the directive and the parent scope.
+	function link($scope, element, attributes) {
+		// Get access to the model tracking the original object referenced by
+		// the ng-model attribute.
+		var parentScope = $scope.$parent;
+		var sourceItemsModel = $parse(attributes.ngModel);
+		var placeholderValue = $scope.$eval(attributes.placeholderValue);
 		var blurredFieldIndex = -1;
+		
+		if (!placeholderValue) {
+			placeholderValue = '';
+		}
+
+		// Copies items to the directive scope and parent scope, accounting
+		// for the placeholder item in the directive scope. Does not clean
+		// falsy items; that must be done before calling this method as the
+		// logic is not always desired.
+		function syncItems(newItems) {
+			newItems = angular.copy(newItems);
+			var parentItems = angular.copy(newItems);
+
+			// Add a placeholder at the end if there is not one yet
+			if (newItems && !angular.equals(newItems[newItems.length - 1], placeholderValue)) {
+				newItems.push(angular.copy(placeholderValue));
+			}
+
+			// Remove placeholder from parent items if they exist
+			if (parentItems && angular.equals(parentItems[parentItems.length - 1], placeholderValue)) {
+				parentItems.pop();
+			}
+
+			if (!angular.equals($scope.items, newItems)) {
+				$scope.items = newItems;
+			}
+
+			sourceItemsModel.assign(parentScope, parentItems);
+		}
+
+		// Keep one extra item for the new field and update upon any
+		// internal or external changes to the items
+		parentScope.$watchCollection(attributes.ngModel, function(items) {
+			if (items && !angular.equals($scope.items.slice(0, $scope.items.length - 1), items)) {
+				syncItems(listByRemovingFalsyItems(items, placeholderValue));
+			}
+		});
+
+		// Update the parent scope whenever the local items change
+		$scope.$watch('items', syncItems, true);
+
+		// Remove falsy items from the source data upon initialization
+		syncItems(listByRemovingFalsyItems($scope.$eval(attributes.ngModel), placeholderValue));
 
 		/**
 		 * @ngdoc method
@@ -226,7 +259,7 @@ angular.module('ui.listInput', [])
 		 * such as when a field is blurred. It may not be polite to remove a
 		 * field as soon as the user deletes the last remaining character.
 		 *
-		 * The scope is updated asynchronously so as to allow the browser to
+		 * The $scope is updated asynchronously so as to allow the browser to
 		 * focus the next or previous input if the user pressed *Tab* or
 		 * *Shift+Tab* to change fields. This allows the intended focus to
 		 * remain active after the removal. For instance, pressing *Tab*
@@ -238,7 +271,7 @@ angular.module('ui.listInput', [])
 		$scope.updateItems = function() {
 			$timeout(function() {
 				var indexOfFocusedField = $scope.indexOfFocusedField(),
-				listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems($scope.items),
+				listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems($scope.items, placeholderValue),
 				index;
 				var indexToFocus = indexOfFocusedField,
 				removedIndices = listAndRemovedIndices.removedIndices;
@@ -256,7 +289,7 @@ angular.module('ui.listInput', [])
 					}
 				}
 
-				$scope.updateItemsInParentScope(listAndRemovedIndices.list);
+				syncItems(listAndRemovedIndices.list);	
 
 				if (indexToFocus >= 0) {
 					$scope.focusFieldAtIndex(indexToFocus);
@@ -282,13 +315,14 @@ angular.module('ui.listInput', [])
 		 */
 		$scope.removeItemAtIndex = function(index) {
 			if (index >= 0 && index < $scope.items.length) {
-				$scope.items.splice(index, 1);
-				$scope.updateItemsInParentScope($scope.items);
+				var newItems = angular.copy($scope.items);
+				newItems.splice(index, 1);
+				syncItems(newItems);
 
 				if (blurredFieldIndex >= 0) {
 					// Focus bottommost field if the focused field was removed
 					if (blurredFieldIndex === index) {
-						$scope.focusFieldAtIndex($scope.items.length);
+						$scope.focusFieldAtIndex($scope.items.length - 1);
 					}
 					// Keep focus in the same field after removing the item
 					else {
@@ -297,6 +331,60 @@ angular.module('ui.listInput', [])
 					}
 				}
 			}
+		};
+
+		/**
+		 * @ngdoc method
+		 * @name ui.listInput.directive:uiListInput#$scope.focusFieldAtIndex
+		 * @function
+		 * @methodOf ui.listInput.directive:uiListInput
+		 *
+		 * @description
+		 * 
+		 * Allows the controller to move focus to a specific field.
+		 *
+		 * If the specified field is not yet added to the DOM, one attempt
+		 * will be made to focus the field after a short timeout.
+		 * 
+		 * @param {Number} index The index of the item to focus.
+		 */
+		$scope.focusFieldAtIndex = function(index, secondAttempt) {
+			if (index >= 0) {
+				var inputs = element.find('input');
+				if (index < inputs.length) {
+					inputs[index].focus();
+				}
+				else if (!secondAttempt) {
+					setTimeout(function() {
+						$scope.focusFieldAtIndex(index, true);
+					}, 50);
+				}
+			}
+		};
+
+		/**
+		 * @ngdoc method
+		 * @name ui.listInput.directive:uiListInput#$scope.indexOfFocusedField
+		 * @function
+		 * @methodOf ui.listInput.directive:uiListInput
+		 *
+		 * @description
+		 * 
+		 * Returns the index of the input element within the directive that
+		 * currently has focus.
+		 *
+		 * @return {Number} The index of the focused field or `-1` if no
+		 *     field is focused
+		 */
+		$scope.indexOfFocusedField = function(index) {
+			var focusedField = document.activeElement;
+			var inputs = element.find('input');
+			for (var i = 0; i < inputs.length; i++) {
+				if (inputs[i] === focusedField) {
+					return i;
+				}
+			}
+			return -1;
 		};
 
 		/**
@@ -328,113 +416,41 @@ angular.module('ui.listInput', [])
 		};
 	}
 
-	function link(scope, element, attributes) {
-		// Get access to the model tracking the original object referenced by
-		// the ng-model attribute.
-		var parentScope = scope.$parent;
-		var sourceItemsModel = $parse(attributes.ngModel);
-		
-		scope.updateItemsInParentScope = function(newItems) {
-			sourceItemsModel.assign(parentScope, angular.copy(newItems));
-		};
-
-		// Keep one extra item for the new field and update upon any
-		// internal or external changes to the items
-		parentScope.$watchCollection(attributes.ngModel, function(items) {
-			if (items && !angular.equals(scope.items, items)) {
-				var cleanItems = listByRemovingFalsyItems(items);
-				// Ensure that falsy items are removed
-				scope.items = cleanItems;
-			}
-		});
-		scope.$watchCollection('items', function(items) {
-			scope.itemsRange = new Array(items.length + 1);
-			scope.updateItemsInParentScope(items);
-		});
-
-		scope.items = listByRemovingFalsyItems(attributes.ngModel);
-
-		/**
-		 * @ngdoc method
-		 * @name ui.listInput.directive:uiListInput#focusFieldAtIndex
-		 * @function
-		 * @methodOf ui.listInput.directive:uiListInput
-		 *
-		 * @description
-		 * 
-		 * Allows the controller to move focus to a specific field.
-		 *
-		 * If the specified field is not yet added to the DOM, one attempt
-		 * will be made to focus the field after a short timeout.
-		 * 
-		 * @param {Number} index The index of the item to focus.
-		 */
-		scope.focusFieldAtIndex = function(index, secondAttempt) {
-			if (index >= 0) {
-				var inputs = element.find('input');
-				if (index < inputs.length) {
-					inputs[index].focus();
-				}
-				else if (!secondAttempt) {
-					setTimeout(function() {
-						scope.focusFieldAtIndex(index, true);
-					}, 50);
-				}
-			}
-		};
-
-		/**
-		 * @ngdoc method
-		 * @name ui.listInput.directive:uiListInput#indexOfFocusedField
-		 * @function
-		 * @methodOf ui.listInput.directive:uiListInput
-		 *
-		 * @description
-		 * 
-		 * Returns the index of the input element within the directive that
-		 * currently has focus.
-		 *
-		 * @return {Number} The index of the focused field or `-1` if no
-		 *     field is focused
-		 */
-		scope.indexOfFocusedField = function(index) {
-			var focusedField = document.activeElement;
-			var inputs = element.find('input');
-			for (var i = 0; i < inputs.length; i++) {
-				if (inputs[i] === focusedField) {
-					return i;
-				}
-			}
-			return -1;
-		};
-	}
-
+	// Custom compilation does transclusion based on logic not available
+	// to a simple ng-transclude.
 	function compile(element, attributes, transclude) {
 		// Parse any content that was included in this directive to pull out
 		// an input field 
-		// TODO: support more formal approach to customizing content within
-		// the directive
 		transclude($rootScope, function(clone) {
 			var transcluded = angular.element('<div></div>').append(clone);
 			var transcludedInput = transcluded.find('input');
 
-			// The transcluded content did not have an input, so create one.
-			if (transcludedInput.length === 0) {
-				transcludedInput = angular.element('<input name="listItem" type="text" class="form-control" />');
+			if ('customFields' in attributes) {
+				var form = element.find('ng-form');
+
+				form.empty().append(transcluded.contents());
+
+				form.removeAttr('ng-class');
 			}
+			else {
+				// The transcluded content did not have an input, so create one.
+				if (transcludedInput.length === 0) {
+					transcludedInput = angular.element('<input name="listItem" type="text" class="form-control" />');
+				}
 
-			// Enforce a name for validation
-			transcludedInput.attr('name', 'listItem');
+				// Enforce a name for validation
+				transcludedInput.attr('name', 'listItem');
 
-			// Enforce a model based on repeating over the cloned items
-			transcludedInput.attr('ng-model', 'items[$index]');
+				// Enforce a model based on repeating over the cloned items
+				transcludedInput.attr('ng-model', 'items[$index]');
+
+				// There should be an <input /> placeholder in the template
+				element.find('input').replaceWith(transcludedInput);
+			}
 
 			// Ensure that everything is updated on blur and empty fields are
 			// removed
 			transcludedInput.attr('ng-blur', 'didBlurFieldAtIndex($index);updateItems()');
-
-			// There should be an <input /> placeholder in the template
-			element.find('input').replaceWith(transcludedInput);
 		});
 
 		return link;
@@ -448,16 +464,15 @@ angular.module('ui.listInput', [])
 		// Provide access to content originally included in the directive
 		transclude: true,
 
-		// Create a child scope inheriting from the outer scope so that any
-		// transcluded content can access outer scope members.
+		// Create a child $scope inheriting from the outer $scope so that any
+		// transcluded content can access outer $scope members.
 		scope: true,
 
 		// Load template from the configuration
-		templateUrl: function() {
-			return listInputConfig.listInputTemplate;
-		},
+		templateUrl: 'list-input.tpl.html',
 
-		controller: controller,
+		// Custom compilation does transclusion based on logic not available
+		// to a simple ng-transclude
 		compile: compile
 	};
 });
