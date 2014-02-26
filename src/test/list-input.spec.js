@@ -8,11 +8,9 @@ stub = sinon.stub;
 
 describe('ui.listInput', function() {
 
-	var $scope, $directiveScope, $timeout, listInputConfigProvider;
+	var $scope, $directiveScope, $timeout;
 
-	beforeEach(module('ui.listInput', function(_listInputConfigProvider_) {
-		listInputConfigProvider = _listInputConfigProvider_;
-	}));
+	beforeEach(module('ui.listInput'));
 
 	beforeEach(inject(function($rootScope, _$timeout_) {
 		$scope = $rootScope.$new();
@@ -35,71 +33,6 @@ describe('ui.listInput', function() {
 
 		return element;
 	}
-
-	describe('config service', function() {
-
-		var listInputConfig;
-
-		beforeEach(inject(function(_listInputConfig_) {
-			listInputConfig = _listInputConfig_;
-		}));
-
-		it('should have been loaded', function() {
-			listInputConfigProvider.should.exist;
-			listInputConfig.should.exist;
-		});
-
-		// String properties
-		it('should assign a new string value to a string property', function() {
-			listInputConfigProvider.set('listInputTemplate', 'foo');
-
-			listInputConfig.listInputTemplate.should.equal('foo');
-		});
-
-		it('should not allow a non-string value for a string property', function() {
-			var initialValue = listInputConfig.listInputTemplate;
-			listInputConfigProvider.set('listInputTemplate', 5);
-
-			listInputConfig.listInputTemplate.should.not.equal(5);
-			listInputConfig.listInputTemplate.should.deep.equal(initialValue);
-		});
-
-		it('should not allow definition of unknown properties', function() {
-			listInputConfigProvider.set('foo', 'bar');
-			should.not.exist(listInputConfig.foo);
-		});
-
-		// Object syntax
-		it('should assign a new string value to a string property with object syntax', function() {
-			listInputConfigProvider.set({listInputTemplate: 'foo'});
-
-			listInputConfig.listInputTemplate.should.equal('foo');
-		});
-
-		it('should not allow a non-string value for a string property with object syntax', function() {
-			var initialListInputConfig = angular.copy(listInputConfig);
-			listInputConfigProvider.set({listInputTemplate: 5});
-
-			listInputConfig.listInputTemplate.should.not.equal(5);
-			listInputConfig.should.deep.equal(initialListInputConfig);
-		});
-
-		it('should not allow definition of unknown properties with object syntax', function() {
-			var initialListInputConfig = angular.copy(listInputConfig);
-			listInputConfigProvider.set({foo: 'bar'});
-
-			listInputConfig.should.deep.equal(initialListInputConfig);
-		});
-
-		// Bad input
-		it('should ignore invalid types for the property name/object', function() {
-			var initialListInputConfig = angular.copy(listInputConfig);
-			listInputConfigProvider.set(5, 'foo');
-			
-			listInputConfig.should.deep.equal(initialListInputConfig);
-		});
-
-	});
 
 	describe('upon initialization', function() {
 
@@ -367,7 +300,7 @@ describe('ui.listInput', function() {
 				$directiveScope.focusFieldAtIndex.should.have.been.calledOnce.and.calledWith(itemToDelete);
 			});
 
-			it('not change focus after clearing a field if no fields are focused', function() {
+			it('clears a field when no fields are focused', function() {
 				var itemToDelete = 1;
 				stub($directiveScope, 'indexOfFocusedField').returns(-1);
 				setValueOfFieldAtIndex(itemToDelete, '');
