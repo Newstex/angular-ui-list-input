@@ -101,6 +101,11 @@ angular.module('ui.listInput', [])
  * 
  * @param {Array[String]} ngModel The array to edit, or a new variable in the
  *     $scope into which an array can be assigned by the directive.
+ * @param {Boolean} customFields The presence of this attribute causes the
+ *     directive to wrap any contents provided inside the repeated `ng-form`
+ *     element. Transcluded content had access to both the local and parent
+ *     scope.
+ * @param {*} placeholderValue Specifies a default value that will be assigned for 
  * 
  * @property {Array[String]} $scope.items A copy of the array referenced in the
  *     `ngModel` attribute for
@@ -109,26 +114,65 @@ angular.module('ui.listInput', [])
  *     bound to this property rather than `$scope.items`.
  *
  * @description 
- * 
- * Allows textual data to be added to or removed from a list.
+ * Allows textual or structured data to be added to or removed from a list.
  *
  * This control does not provide any functionality for sorting or reordering the
  * list. New items are added at the bottom and existing items may be modified or
  * removed.
  *
  * The control uses Bootstrap CSS classes to standardize the input styling and
- * item removal buttons.
+ * item removal buttons. The appearance of the form fields is entirely
+ * customizable using the `custom-fields` attribute.
  *
  * ### Data types
  *
- * All items in the source data will be stringified for display in the text
- * fields. Output data will be strings only, regardless of whether the value
- * could be interpreted as a number of other type.
+ * Used without any nested inputs, all items in the source data will be
+ * stringified for display in the text fields. Output data will be strings
+ * only, regardless of whether the value could be interpreted as a number of
+ * other type.
+ *
+ * Data types can be customized by simply providing a custom `<input>` field,
+ * or by integrating with `custom-fields`.
+ *
+ * ### Custom input type
+ *
+ * To use an alternate input type (the default is `text`), simply nest an
+ * `<input>` element inside the directive. It will be transcluded in place of
+ * the default input and automatically enriched with the required `ng-model`,
+ * `name`, and `ng-blur` properties.
+ *
+ *     <div ui-list-input ng-model="sampleList">
+ *         <input type="number" />
+ *     </div>
+ *
+ * ### Custom fields
+ *
+ * Further customization is available with the `custom-fields` attribute. When
+ * present, all content in the directive will be transcluded into the `ng-
+ * form` element in the template. The form, inside a repeater, allows
+ * validation without worrying about duplicate field names.
+ *
+ *     <div ui-list-input ng-model="sampleObjects" custom-fields placeholder-value="{}">
+ *         <input name="name" placeholder="Name" ng-model="items[$index].name" type="text" />
+ *         <input name="profession" placeholder="Profession" ng-model="items[$index].profession" type="text" />
+ *     </div>
+ *
+ * The use of `items[$index]` is very important as it provides access to the
+ * current item represented in the repeater. Values can be assigned to it,
+ * affecting the corresponding item in the source data. The `items` array is
+ * added to the directive scope and is not available outside of the directive.
+ * 
+ * In this example, `placeholder-value="{}"` is necessary to avoid trying to
+ * assign to the `name` and `profession` properties of a null object. The
+ * fields representing a new item will be populated with that default value
+ * and any fields deeply matching that value will not be propagated back to
+ * the parent scope.
  *
  * ### Binding to the parent $scope
  *
  * The model provided to the directive is updated in realtime with each
- * keystroke.
+ * keystroke. The item representing the placeholder for adding a new item is
+ * never added to the parent scope.
  *
  * ### Handling empty (falsy) items
  *
@@ -139,8 +183,10 @@ angular.module('ui.listInput', [])
  * * `null`
  * * `""`
  * * `undefined`
+ * * The value provided in the `placeholderValue` attribute, equality
+ *   determined by `angular.equals()`
  * 
- * If a field is cleared while editing, the empty string is not immediately
+ * If a field is cleared while editing, the empty value is not immediately
  * removed. `updateItems` must be called to remove items that the user has
  * cleared. By default this occurs whenever a field is blurred. This behavior
  * ensures that the user can clear a field and type something else without that
@@ -152,9 +198,27 @@ angular.module('ui.listInput', [])
  * @example
  * <example module="ui.listInput">
  *  <file name="index.html">
- *      <div ng-init="sampleList=['A','B','C']">
- *         <div ui-list-input ng-model="sampleList"></div>
- *         <pre>{{sampleList}}</pre>
+ *      <h3>Strings</h3>
+ *      <div ng-init="sampleStrings=['A','B','C']">
+ *         <div ui-list-input ng-model="sampleStrings"></div>
+ *         <pre>{{sampleStrings}}</pre>
+ *      </div>
+ *      
+ *      <h3>Numbers</h3>
+ *      <div ng-init="sampleNumbers=[0,1,2]">
+ *         <div ui-list-input ng-model="sampleNumbers">
+ *             <input type="number" />
+ *         </div>
+ *         <pre>{{sampleNumbers}}</pre>
+ *      </div>
+ *      
+ *      <h3>Complex data</h3>
+ *      <div ng-init="sampleObjects=[{name:'John', profession:'Butcher'},{name:'Matilda', profession:'Baker'},{name:'Buddy', profession:'Candlestick Maker'}]">
+ *         <div ui-list-input ng-model="sampleObjects" custom-fields placeholder-value="{}">
+ *             <input name="name" placeholder="Name" ng-model="items[$index].name" type="text" />
+ *             <input name="profession" placeholder="Profession" ng-model="items[$index].profession" type="text" />
+ *         </div>
+ *         <pre>{{sampleObjects}}</pre>
  *      </div>
  *   </file>
  * </example>

@@ -1,5 +1,5 @@
 <div class="list-input">
-	<div ng-repeat="item in items track by $index" class="list-input-item"> 
+	<div ng-repeat="doNotUse in items track by $index" class="list-input-item"> 
 		<ng-form name="list-input-item" ng-class="{'input-group': !$last}">
 			<input />
 			<div class="input-group-addon btn" ng-click="removeItemAtIndex($index)" ng-hide="$last">
