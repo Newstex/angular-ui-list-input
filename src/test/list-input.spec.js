@@ -8,11 +8,9 @@ stub = sinon.stub;
 
 describe('ui.listInput', function() {
 
-	var $scope, $directiveScope, $timeout, listInputConfigProvider;
+	var $scope, $directiveScope, $timeout;
 
-	beforeEach(module('ui.listInput', function(_listInputConfigProvider_) {
-		listInputConfigProvider = _listInputConfigProvider_;
-	}));
+	beforeEach(module('ui.listInput'));
 
 	beforeEach(inject(function($rootScope, _$timeout_) {
 		$scope = $rootScope.$new();
@@ -31,96 +29,29 @@ describe('ui.listInput', function() {
 		});
 
 		$scope.$digest();
-		$directiveScope = element.isolateScope();
+		$directiveScope = element.scope();
 
 		return element;
 	}
 
-	// Make sure the directive 
-	describe('config service', function() {
-
-		var listInputConfig;
-
-		beforeEach(inject(function(_listInputConfig_) {
-			listInputConfig = _listInputConfig_;
-		}));
-
-		it('should have been loaded', function() {
-			listInputConfigProvider.should.exist;
-			listInputConfig.should.exist;
-		});
-
-		// String properties
-		it('should assign a new string value to a string property', function() {
-			listInputConfigProvider.set('listInputTemplate', 'foo');
-
-			listInputConfig.listInputTemplate.should.equal('foo');
-		});
-
-		it('should not allow a non-string value for a string property', function() {
-			var initialValue = listInputConfig.listInputTemplate;
-			listInputConfigProvider.set('listInputTemplate', 5);
-
-			listInputConfig.listInputTemplate.should.not.equal(5);
-			listInputConfig.listInputTemplate.should.deep.equal(initialValue);
-		});
-
-		it('should not allow definition of unknown properties', function() {
-			listInputConfigProvider.set('foo', 'bar');
-			should.not.exist(listInputConfig.foo);
-		});
-
-		// Object syntax
-		it('should assign a new string value to a string property with object syntax', function() {
-			listInputConfigProvider.set({listInputTemplate: 'foo'});
-
-			listInputConfig.listInputTemplate.should.equal('foo');
-		});
-
-		it('should not allow a non-string value for a string property with object syntax', function() {
-			var initialListInputConfig = angular.copy(listInputConfig);
-			listInputConfigProvider.set({listInputTemplate: 5});
-
-			listInputConfig.listInputTemplate.should.not.equal(5);
-			listInputConfig.should.deep.equal(initialListInputConfig);
-		});
-
-		it('should not allow definition of unknown properties with object syntax', function() {
-			var initialListInputConfig = angular.copy(listInputConfig);
-			listInputConfigProvider.set({foo: 'bar'});
-
-			listInputConfig.should.deep.equal(initialListInputConfig);
-		});
-
-		// Bad input
-		it('should ignore invalid types for the property name/object', function() {
-			var initialListInputConfig = angular.copy(listInputConfig);
-			listInputConfigProvider.set(5, 'foo');
-			
-			listInputConfig.should.deep.equal(initialListInputConfig);
-		});
-
-	});
-
-	// Make sure the directive 
 	describe('upon initialization', function() {
 
 		it('with attribute syntax should have inputs', function() {
 			var element = compileDirective('<div ui-list-input ng-model="sampleData"></div>');
 			
-			element.find('input').should.have.length(1);
+			element.find(':input').should.have.length(1);
 		});
 
 		it('with element syntax should have inputs', function() {
 			var element = compileDirective('<ui-list-input ng-model="sampleData"></ui-list-input>');
 			
-			element.find('input').should.have.length(1);
+			element.find(':input').should.have.length(1);
 		});
 
 		it('with class syntax should have inputs', function() {
 			var element = compileDirective('<div class="ui-list-input" ng-model="sampleData"></div>');
 			
-			element.find('input').should.have.length(1);
+			element.find(':input').should.have.length(1);
 		});
 
 		it('should have inputs for each item plus one for a new item', function() {
@@ -128,7 +59,7 @@ describe('ui.listInput', function() {
 
 			var element = compileDirective();
 			
-			element.find('input').should.have.length(4);
+			element.find(':input').should.have.length(4);
 		});
 
 		it('should have one input when there are no items', function() {
@@ -136,7 +67,7 @@ describe('ui.listInput', function() {
 
 			var element = compileDirective();
 			
-			element.find('input').should.have.length(1);
+			element.find(':input').should.have.length(1);
 		});
 
 		it('should have one input when the model is not an array', function() {
@@ -144,7 +75,7 @@ describe('ui.listInput', function() {
 
 			var element = compileDirective();
 			
-			element.find('input').should.have.length(1);
+			element.find(':input').should.have.length(1);
 		});
 
 		it('should not show inputs for non-numeric falsy items', function() {
@@ -153,13 +84,13 @@ describe('ui.listInput', function() {
 			var element = compileDirective();
 			
 			// 0 is falsy but numeric and therefore may be a significant value
-			element.find('input').should.have.length(4);
+			element.find(':input').should.have.length(4);
 		});
 
 		it('should have one input when items are undefined', function() {
 			var element = compileDirective();
 			
-			element.find('input').should.have.length(1);
+			element.find(':input').should.have.length(1);
 		});
 
 	});
@@ -171,12 +102,12 @@ describe('ui.listInput', function() {
 
 			var element = compileDirective();
 			
-			element.find('input').should.have.length(4);
+			element.find(':input').should.have.length(4);
 
 			$scope.sampleData.pop();
 			$scope.$digest();
 
-			element.find('input').should.have.length(3);
+			element.find(':input').should.have.length(3);
 		});
 
 		it('should update when an item is added', function() {
@@ -184,12 +115,12 @@ describe('ui.listInput', function() {
 
 			var element = compileDirective();
 			
-			element.find('input').should.have.length(4);
+			element.find(':input').should.have.length(4);
 
 			$scope.sampleData.push('D');
 			$scope.$digest();
 
-			element.find('input').should.have.length(5);
+			element.find(':input').should.have.length(5);
 		});
 
 		it('should not update when non-numeric falsy items are added', function() {
@@ -197,7 +128,7 @@ describe('ui.listInput', function() {
 
 			var element = compileDirective();
 			
-			element.find('input').should.have.length(4);
+			element.find(':input').should.have.length(4);
 
 			$scope.sampleData.push('');
 			$scope.sampleData.push(null);
@@ -205,7 +136,7 @@ describe('ui.listInput', function() {
 			$scope.sampleData.push(false);
 			$scope.$digest();
 
-			element.find('input').should.have.length(4);
+			element.find(':input').should.have.length(4);
 		});
 
 		it('should update when items are reassigned', function() {
@@ -213,23 +144,23 @@ describe('ui.listInput', function() {
 
 			var element = compileDirective();
 			
-			element.find('input').should.have.length(4);
+			element.find(':input').should.have.length(4);
 
 			$scope.sampleData = ['D', 'E', 'F'];
 			$scope.$digest();
 
-			element.find('input').should.have.length(4);
+			element.find(':input').should.have.length(4);
 		});
 
 		it('should update when items are assigned asynchronously', function() {
 			var element = compileDirective();
 			
-			element.find('input').should.have.length(1);
+			element.find(':input').should.have.length(1);
 
 			$scope.sampleData = ['A', 'B', 'C'];
 			$scope.$digest();
 
-			element.find('input').should.have.length(4);
+			element.find(':input').should.have.length(4);
 		});
 
 	});
@@ -245,7 +176,7 @@ describe('ui.listInput', function() {
 		});
 
 		function fieldAtIndex(fieldIndex) {
-			return element.find('input').eq(fieldIndex);
+			return element.find(':input').eq(fieldIndex);
 		}
 
 		function setValueOfFieldAtIndex(fieldIndex, value) {
@@ -268,14 +199,14 @@ describe('ui.listInput', function() {
 			it('changes the value of a field', function() {
 				setValueOfFieldAtIndex(1, 'bar');
 
-				element.find('input').should.have.length(4);
+				element.find(':input').should.have.length(4);
 				$scope.sampleData.should.deep.equal(['A', 'bar', 'C']);
 			});
 
 			it('clears a field but has not yet blurred', function() {
 				setValueOfFieldAtIndex(0, '');
 
-				element.find('input').should.have.length(4);
+				element.find(':input').should.have.length(4);
 				$scope.sampleData.should.deep.equal(['', 'B', 'C']);
 			});
 
@@ -283,23 +214,23 @@ describe('ui.listInput', function() {
 				setValueOfFieldAtIndex(0, '');
 				blurFieldAtIndex(0);
 
-				element.find('input').should.have.length(3);
+				element.find(':input').should.have.length(3);
 				$scope.sampleData.should.deep.equal(['B', 'C']);
 			});
 
 			it('adds an item', function() {
 				setValueOfFieldAtIndex(3, 'D');
 
-				element.find('input').should.have.length(5);
+				element.find(':input').should.have.length(5);
 				$scope.sampleData.should.deep.equal(['A', 'B', 'C', 'D']);
 			});
 
 			it('removes an item with the delete button', function() {
-				element.find('button').eq(0).triggerHandler('click');
+				element.find('[ng-click]').eq(0).triggerHandler('click');
 
-				$scope.$digest();
+				$timeout.flush();
 
-				element.find('input').should.have.length(3);
+				element.find(':input').should.have.length(3);
 				$scope.sampleData.should.deep.equal(['B', 'C']);
 			});
 
@@ -319,7 +250,7 @@ describe('ui.listInput', function() {
 
 				$timeout.flush();
 
-				element.find('input').should.have.length(3);
+				element.find(':input').should.have.length(3);
 				$directiveScope.focusFieldAtIndex.should.have.been.calledOnce.and.calledWith(2);
 			});
 
@@ -330,7 +261,7 @@ describe('ui.listInput', function() {
 
 				$timeout.flush();
 
-				element.find('input').should.have.length(3);
+				element.find(':input').should.have.length(3);
 				$directiveScope.focusFieldAtIndex.should.have.been.calledOnce.and.calledWith(itemToDelete - 1);
 			});
 
@@ -341,7 +272,7 @@ describe('ui.listInput', function() {
 
 				$timeout.flush();
 
-				element.find('input').should.have.length(3);
+				element.find(':input').should.have.length(3);
 				$directiveScope.focusFieldAtIndex.should.have.been.calledOnce.and.calledWith(itemToDelete);
 			});
 
@@ -353,7 +284,7 @@ describe('ui.listInput', function() {
 
 				$timeout.flush();
 
-				element.find('input').should.have.length(3);
+				element.find(':input').should.have.length(3);
 				$directiveScope.focusFieldAtIndex.should.have.been.calledOnce.and.calledWith(itemToDelete - 1);
 			});
 
@@ -365,11 +296,11 @@ describe('ui.listInput', function() {
 
 				$timeout.flush();
 
-				element.find('input').should.have.length(3);
+				element.find(':input').should.have.length(3);
 				$directiveScope.focusFieldAtIndex.should.have.been.calledOnce.and.calledWith(itemToDelete);
 			});
 
-			it('not change focus after clearing a field if no fields are focused', function() {
+			it('clears a field when no fields are focused', function() {
 				var itemToDelete = 1;
 				stub($directiveScope, 'indexOfFocusedField').returns(-1);
 				setValueOfFieldAtIndex(itemToDelete, '');
@@ -377,7 +308,7 @@ describe('ui.listInput', function() {
 
 				$timeout.flush();
 
-				element.find('input').should.have.length(3);
+				element.find(':input').should.have.length(3);
 				$directiveScope.focusFieldAtIndex.should.not.have.been.called;
 			});
 

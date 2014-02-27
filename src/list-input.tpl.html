@@ -1,6 +1,10 @@
-<div ng-repeat="item in itemsRange track by $index" ng-class="{'input-group': !$last}">
-	<input type="text" ng-model="form.items[$index]" ng-blur="didBlurFieldAtIndex($index);updateItems()" class="form-control"/>
-	<button class="input-group-addon btn" tabindex="-1" ng-click="removeItemAtIndex($index)" ng-hide="$last">
-		<span class="glyphicon glyphicon-remove"></span>
-	</button>
+<div class="list-input">
+	<div ng-repeat="doNotUse in items track by $index" class="list-input-item"> 
+		<ng-form name="list-input-item" ng-class="{'input-group': !$last}">
+			<input />
+			<div class="input-group-addon btn" ng-click="removeItemAtIndex($index)" ng-hide="$last">
+				<span class="glyphicon glyphicon-remove"></span>
+			</div>
+		</ng-form>
+	</div>
 </div>
