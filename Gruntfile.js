@@ -1,5 +1,8 @@
 module.exports = function(grunt) {
 
+	// Load grunt tasks automatically
+	require('load-grunt-tasks')(grunt);
+
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 		library: grunt.file.readJSON('bower.json'),
@@ -67,13 +70,13 @@ module.exports = function(grunt) {
 		},
 		watch: {
 			options: {
-				livereload: true
+				livereload: 35735
 			},
 			files: [
 				'Gruntfile.js',
 				'src/**/*'
 			],
-			tasks: ['default']
+			tasks: ['before-test', 'after-test']
 		},
 		ngdocs: {
 			options: {
@@ -102,21 +105,12 @@ module.exports = function(grunt) {
 		},
 	});
 
-	grunt.loadNpmTasks('grunt-contrib-uglify');
-	grunt.loadNpmTasks('grunt-contrib-jshint');
-	grunt.loadNpmTasks('grunt-contrib-concat');
-	grunt.loadNpmTasks('grunt-contrib-watch');
-	grunt.loadNpmTasks('grunt-ngmin');
-	grunt.loadNpmTasks('grunt-ngdocs');
-	grunt.loadNpmTasks('grunt-angular-templates');
-	grunt.loadNpmTasks('grunt-karma');
-
 	grunt.registerTask('before-test', ['ngtemplates', 'jshint:beforeConcat', 'concat']);
 	grunt.registerTask('after-test', ['ngmin', 'jshint:afterConcat', 'uglify']);
 
 
 	grunt.registerTask('default', ['before-test', 'test', 'after-test']);
-	grunt.registerTask('livereload', ['default', 'watch']);
+	grunt.registerTask('livereload', ['before-test', 'after-test', 'watch']);
 	grunt.registerTask('docs', ['before-test', 'after-test', 'ngdocs']);
 
 	grunt.registerTask('test', 'Run tests on singleRun karma server', function() {
