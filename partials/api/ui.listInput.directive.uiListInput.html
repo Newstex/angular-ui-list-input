@@ -4,126 +4,151 @@
 </div>
 </h1>
 <div><h2 id="description">Description</h2>
-<div class="description"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-page"><p>Allows textual data to be added to or removed from a list.</p>
-<p>This control does not provide any functionality for sorting or reordering
-the list. New items are added at the bottom and existing items may be
-modified or removed.</p>
-<p>The control uses Bootstrap CSS classes to standardize the input styling
-and item removal buttons.</p>
+<div class="description"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-page"><p>Allows textual or structured data to be added to or removed from a list.</p>
+<p>This control does not provide any functionality for sorting or reordering the
+list. New items are added at the bottom and existing items may be modified or
+removed.</p>
+<p>The control uses Bootstrap CSS classes to standardize the input styling and
+item removal buttons. The appearance of the form fields is entirely
+customizable using the <code>custom-fields</code> attribute.</p>
 <h5 id="description_data-types">Data types</h5>
-<p>All items in the source data will be stringified for display in the text
-fields. Output data will be strings only, regardless of whether the
-value could be interpreted as a number of other type.</p>
-<h5 id="description_binding-to-the-parent-scope">Binding to the parent scope</h5>
+<p>Used without any nested inputs, all items in the source data will be
+stringified for display in the text fields. Output data will be strings
+only, regardless of whether the value could be interpreted as a number of
+other type.</p>
+<p>Data types can be customized by simply providing a custom <code>&lt;input&gt;</code> field,
+or by integrating with <code>custom-fields</code>.</p>
+<h5 id="description_custom-input-type">Custom input type</h5>
+<p>To use an alternate input type (the default is <code>text</code>), simply nest an
+<code>&lt;input&gt;</code> element inside the directive. It will be transcluded in place of
+the default input and automatically enriched with the required <code>ng-model</code>,
+<code>name</code>, and <code>ng-blur</code> properties.</p>
+<pre><code>&lt;div ui-list-input ng-model=&quot;sampleList&quot;&gt;
+    &lt;input type=&quot;number&quot; /&gt;
+&lt;/div&gt;</code></pre>
+<h5 id="description_custom-fields">Custom fields</h5>
+<p>Further customization is available with the <code>custom-fields</code> attribute. When
+present, all content in the directive will be transcluded into the <code>ng-
+form</code> element in the template. The form, inside a repeater, allows
+validation without worrying about duplicate field names.</p>
+<pre><code>&lt;div ui-list-input ng-model=&quot;sampleObjects&quot; custom-fields placeholder-value=&quot;{}&quot;&gt;
+    &lt;input name=&quot;name&quot; placeholder=&quot;Name&quot; ng-model=&quot;items[$index].name&quot; type=&quot;text&quot; /&gt;
+    &lt;input name=&quot;profession&quot; placeholder=&quot;Profession&quot; ng-model=&quot;items[$index].profession&quot; type=&quot;text&quot; /&gt;
+&lt;/div&gt;</code></pre>
+<p>The use of <code>items[$index]</code> is very important as it provides access to the
+current item represented in the repeater. Values can be assigned to it,
+affecting the corresponding item in the source data. The <code>items</code> array is
+added to the directive scope and is not available outside of the directive.</p>
+<p>In this example, <code>placeholder-value=&quot;{}&quot;</code> is necessary to avoid trying to
+assign to the <code>name</code> and <code>profession</code> properties of a null object. The
+fields representing a new item will be populated with that default value
+and any fields deeply matching that value will not be propagated back to
+the parent scope.</p>
+<h5 id="description_binding-to-the-parent-$scope">Binding to the parent $scope</h5>
 <p>The model provided to the directive is updated in realtime with each
-keystroke.</p>
+keystroke. The item representing the placeholder for adding a new item is
+never added to the parent scope.</p>
 <h5 id="description_handling-empty-items">Handling empty (falsy) items</h5>
-<p>Empty items in the source list are not displayed in the fields. Falsy
-values that will be removed include the following. Note that the falsy 
-value <code>0</code> is not removed.</p>
+<p>Empty items in the source list are not displayed in the fields. Falsy values
+that will be removed include the following. Note that the falsy value <code>0</code> is
+not removed.</p>
 <ul>
 <li><code>null</code></li>
 <li><code>&quot;&quot;</code></li>
 <li><code>undefined</code></li>
+<li>The value provided in the <code>placeholderValue</code> attribute, equality
+determined by <code>angular.equals()</code></li>
 </ul>
-<p>If a field is cleared while editing, the empty string is not immediately
+<p>If a field is cleared while editing, the empty value is not immediately
 removed. <code>updateItems</code> must be called to remove items that the user has
 cleared. By default this occurs whenever a field is blurred. This behavior
-ensures that the user can clear a field and type something else without
-that field being removed from the DOM. Blurring the field by advancing to a
+ensures that the user can clear a field and type something else without that
+field being removed from the DOM. Blurring the field by advancing to a
 different field or clicking outside the field causes the empty value to be
 committed, removing the field from the screen and the empty string from the
 list.</p>
 </div></div>
 <h2 id="usage">Usage</h2>
 <div class="usage">as element:<pre class="prettyprint linenums">&lt;ui-list-input
-       ng-model="{Array[String]}"&gt;
+       ng-model="{Array[String]}"
+       custom-fields="{Boolean}"
+       placeholder-value="{*}"&gt;
 &lt;/ui-list-input&gt;</pre>
 as attribute<pre class="prettyprint linenums">&lt;ANY ui-list-input
-     ng-model="{Array[String]}"&gt;
+     ng-model="{Array[String]}"
+     custom-fields="{Boolean}"
+     placeholder-value="{*}"&gt;
    ...
 &lt;/ANY&gt;</pre>
-as class<pre class="prettyprint linenums">&lt;ANY class="ui-list-input ng-model: {Array[String]};"&gt;
+as class<pre class="prettyprint linenums">&lt;ANY class="ui-list-input ng-model: {Array[String]}; custom-fields: {Boolean}; placeholder-value: {*};"&gt;
    ...
 &lt;/ANY&gt;</pre>
-<h3 id="usage_directive-info">Directive info</h3>
-<div class="directive-info"><ul><li>This directive creates new scope.</li>
-</ul>
-</div>
-<h4 id="usage_directive-info_parameters">Parameters</h4><table class="variables-matrix table table-bordered table-striped"><thead><tr><th>Param</th><th>Type</th><th>Details</th></tr></thead><tbody><tr><td>ngModel</td><td><a href="" class="label type-hint type-hint-array">Array[String]</a></td><td><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-page"><p>The array to edit, or a new variable in the
-scope into which an array can be assigned by the directive.</p>
+<h4 id="usage_parameters">Parameters</h4><table class="variables-matrix table table-bordered table-striped"><thead><tr><th>Param</th><th>Type</th><th>Details</th></tr></thead><tbody><tr><td>ngModel</td><td><a href="" class="label type-hint type-hint-array">Array[String]</a></td><td><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-page"><p>The array to edit, or a new variable in the
+$scope into which an array can be assigned by the directive.</p>
+</div></td></tr><tr><td>customFields</td><td><a href="" class="label type-hint type-hint-boolean">Boolean</a></td><td><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-page"><p>The presence of this attribute causes the
+directive to wrap any contents provided inside the repeated <code>ng-form</code>
+element. Transcluded content had access to both the local and parent
+scope.</p>
+</div></td></tr><tr><td>placeholderValue</td><td><a href="" class="label type-hint type-hint-object">*</a></td><td><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-page"><p>Specifies a default value that will be assigned for</p>
 </div></td></tr></tbody></table></div>
 <div class="member method"><h2 id="methods">Methods</h2>
-<ul class="methods"><li><h3 id="methods_didblurfieldatindex">didBlurFieldAtIndex(index)</h3>
-<div class="didblurfieldatindex"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-didblurfieldatindex-page"><p>Tracks the last focused field for a short period of time so that
-actions such as clicks that blur the field may return focus if desired.
-The template should call this method on blur of any input field.</p>
-</div><h5 id="methods_didblurfieldatindex_parameters">Parameters</h5><table class="variables-matrix table table-bordered table-striped"><thead><tr><th>Param</th><th>Type</th><th>Details</th></tr></thead><tbody><tr><td>index</td><td><a href="" class="label type-hint type-hint-number">Number</a></td><td><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-didblurfieldatindex-page"><p>The index of the item that just lost focus.</p>
-</div></td></tr></tbody></table></div>
-</li>
-<li><h3 id="methods_focusfieldatindex">focusFieldAtIndex(index)</h3>
-<div class="focusfieldatindex"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-focusfieldatindex-page"><p>Allows the controller to move focus to a specific field.</p>
-<p>If the specified field is not yet added to the DOM, one attempt will be made
-to focus the field after a short timeout.</p>
-</div><h5 id="methods_focusfieldatindex_parameters">Parameters</h5><table class="variables-matrix table table-bordered table-striped"><thead><tr><th>Param</th><th>Type</th><th>Details</th></tr></thead><tbody><tr><td>index</td><td><a href="" class="label type-hint type-hint-number">Number</a></td><td><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-focusfieldatindex-page"><p>The index of the item to focus.</p>
+<ul class="methods"><li><h3 id="methods_focusfieldatindex">focusFieldAtIndex(index)</h3>
+<div class="focusfieldatindex"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-scope-focusfieldatindex-page"><p>Allows the controller to move focus to a specific field.</p>
+<p>If the specified field is not yet added to the DOM, one attempt
+will be made to focus the field after a short timeout.</p>
+</div><h5 id="methods_focusfieldatindex_parameters">Parameters</h5><table class="variables-matrix table table-bordered table-striped"><thead><tr><th>Param</th><th>Type</th><th>Details</th></tr></thead><tbody><tr><td>index</td><td><a href="" class="label type-hint type-hint-number">Number</a></td><td><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-scope-focusfieldatindex-page"><p>The index of the item to focus.</p>
 </div></td></tr></tbody></table></div>
 </li>
 <li><h3 id="methods_indexoffocusedfield">indexOfFocusedField()</h3>
-<div class="indexoffocusedfield"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-indexoffocusedfield-page"><p>Returns the index of the input element within the directive that currently 
-has focus.</p>
-</div><h5 id="methods_indexoffocusedfield_returns">Returns</h5><table class="variables-matrix"><tr><td><a href="" class="label type-hint type-hint-number">Number</a></td><td><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-indexoffocusedfield-page"><p>The index of the focused field or <code>-1</code> if no field is focused</p>
+<div class="indexoffocusedfield"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-scope-indexoffocusedfield-page"><p>Returns the index of the input element within the directive that
+currently has focus.</p>
+</div><h5 id="methods_indexoffocusedfield_returns">Returns</h5><table class="variables-matrix"><tr><td><a href="" class="label type-hint type-hint-number">Number</a></td><td><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-scope-indexoffocusedfield-page"><p>The index of the focused field or <code>-1</code> if no
+field is focused</p>
 </div></td></tr></table></div>
+</li>
+<li><h3 id="methods_didblurfieldatindex">didBlurFieldAtIndex(index)</h3>
+<div class="didblurfieldatindex"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-didblurfieldatindex-page"><p>Tracks the last focused field for a short period of time so that
+actions such as clicks that blur the field may return focus if
+desired. The template should call this method on blur of any
+input field.</p>
+</div><h5 id="methods_didblurfieldatindex_parameters">Parameters</h5><table class="variables-matrix table table-bordered table-striped"><thead><tr><th>Param</th><th>Type</th><th>Details</th></tr></thead><tbody><tr><td>index</td><td><a href="" class="label type-hint type-hint-number">Number</a></td><td><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-didblurfieldatindex-page"><p>The index of the item that just lost focus.</p>
+</div></td></tr></tbody></table></div>
 </li>
 <li><h3 id="methods_removeitematindex">removeItemAtIndex(index)</h3>
 <div class="removeitematindex"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-removeitematindex-page"><p>Removes the item at the specified index from the list and returns
 focus to the previously focused field, if any.</p>
-<p>If the focused field is the one deleted, focus will be moved to the
-last input.</p>
-</div><h5 id="methods_removeitematindex_parameters">Parameters</h5><table class="variables-matrix table table-bordered table-striped"><thead><tr><th>Param</th><th>Type</th><th>Details</th></tr></thead><tbody><tr><td>index</td><td><a href="" class="label type-hint type-hint-number">Number</a></td><td><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-removeitematindex-page"><p>The index of the item to be removed from the list.</p>
+<p>If the focused field is the one deleted, focus will be moved to
+the last input.</p>
+</div><h5 id="methods_removeitematindex_parameters">Parameters</h5><table class="variables-matrix table table-bordered table-striped"><thead><tr><th>Param</th><th>Type</th><th>Details</th></tr></thead><tbody><tr><td>index</td><td><a href="" class="label type-hint type-hint-number">Number</a></td><td><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-removeitematindex-page"><p>The index of the item to be removed from
+the list.</p>
 </div></td></tr></tbody></table></div>
 </li>
 <li><h3 id="methods_updateitems">updateItems()</h3>
-<div class="updateitems"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-updateitems-page"><p>Removes any falsy items from the list and updates focus to accommodate
-any changes in the list. The number zero, while falsy, is not removed.</p>
-<p>This is generally called after a change is confirmed by the user, such
-as when a field is blurred. It may not be polite to remove a field as
-soon as the user deletes the last remaining character.</p>
-<p>The scope is updated asynchronously so as to allow the browser to focus
-the next or previous input if the user pressed <em>Tab</em> or <em>Shift+Tab</em> to 
-change fields. This allows the intended focus to remain active after 
-the removal. For instance, pressing <em>Tab</em> after removing item 1 would 
-focus item 2. However, after item 1 is removed the original item 2 is
-now at position 1. Therefore we want to focus position 1 rather than
-the default behavior which would focus original item 3 now at position 2.</p>
+<div class="updateitems"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-updateitems-page"><p>Removes any falsy items from the list and updates focus to
+accommodate any changes in the list. The number zero, while
+falsy, is not removed.</p>
+<p>This is generally called after a change is confirmed by the user,
+such as when a field is blurred. It may not be polite to remove a
+field as soon as the user deletes the last remaining character.</p>
+<p>The $scope is updated asynchronously so as to allow the browser to
+focus the next or previous input if the user pressed <em>Tab</em> or
+<em>Shift+Tab</em> to change fields. This allows the intended focus to
+remain active after the removal. For instance, pressing <em>Tab</em>
+after removing item 1 would focus item 2. However, after item 1
+is removed the original item 2 is now at position 1. Therefore we
+want to focus position 1 rather than the default behavior which
+would focus original item 3 now at position 2.</p>
 </div></div>
 </li>
 </ul>
 </div>
 <div class="member property"><h2 id="properties">Properties</h2>
 <ul class="properties"><li><h3 id="properties_$scopeitems">$scope.items</h3>
-<div class="$scopeitems"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-page"><p>The array referenced in the
-<code>ngModel</code> attribute. Updates to <code>$scope.items</code> affect the parent scope.</p>
-</div></div>
-</li>
-<li><h3 id="properties_$scopeformitems">$scope.form.items</h3>
-<div class="$scopeformitems"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-page"><p>A copy of <code>$scope.items</code> for
+<div class="$scopeitems"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-page"><p>A copy of the array referenced in the
+<code>ngModel</code> attribute for
 use during editing to distinguish changes made within the directive
 from those made externally. All inputs within the directive should be
 bound to this property rather than <code>$scope.items</code>.</p>
-</div></div>
-</li>
-<li><h3 id="properties_$scopeitemsrange">$scope.itemsRange</h3>
-<div class="$scopeitemsrange"><div class="ui-listinput-directive-page ui-listinput-directive-uilistinput-page"><p>An array suitable for use in a repeater
-that corresponds to the length of <code>$scope.items</code> plus one for entering
-a new item. Use <code>$index</code> in the <code>ngRepeat</code> to reference specific items
-in <code>$scope.form.items</code>.</p>
-<p>The values in this array are undefined; it is only to be used for
-indexed iteration. The following example uses <code>track by $index</code> to ensure
-that the <code>ngRepeat</code> is only re-rendered when the length of <code>itemsRange</code>
-changes rather than on every keystroke.</p>
-<pre><code>&lt;div ng-repeat=&quot;x in itemsRange track by $index&quot;&gt; 
-    {{form.items[$index]}}
-&lt;/div&gt;</code></pre>
 </div></div>
 </li>
 </ul>
@@ -134,9 +159,27 @@ changes rather than on every keystroke.</p>
 <div class="tabbable"><div class="tab-pane" title="index.html">
 <pre class="prettyprint linenums" ng-set-text="index.html" ng-html-wrap-loaded="ui.listInput angular.js"></pre>
 <script type="text/ng-template" id="index.html">
-    <div ng-init="sampleList=['A','B','C']">
-       <div ui-list-input ng-model="sampleList"></div>
-       <pre>{{sampleList}}</pre>
+    <h5 id="example_source_strings">Strings</h5>
+    <div ng-init="sampleStrings=['A','B','C']">
+       <div ui-list-input ng-model="sampleStrings"></div>
+       <pre>{{sampleStrings}}</pre>
+    </div>
+    
+    <h5 id="example_source_numbers">Numbers</h5>
+    <div ng-init="sampleNumbers=[0,1,2]">
+       <div ui-list-input ng-model="sampleNumbers">
+           <input type="number" />
+       </div>
+       <pre>{{sampleNumbers}}</pre>
+    </div>
+    
+    <h5 id="example_source_complex-data">Complex data</h5>
+    <div ng-init="sampleObjects=[{name:'John', profession:'Butcher'},{name:'Matilda', profession:'Baker'},{name:'Buddy', profession:'Candlestick Maker'}]">
+       <div ui-list-input ng-model="sampleObjects" custom-fields placeholder-value="{}">
+           <input name="name" placeholder="Name" ng-model="items[$index].name" type="text" />
+           <input name="profession" placeholder="Profession" ng-model="items[$index].profession" type="text" />
+       </div>
+       <pre>{{sampleObjects}}</pre>
     </div>
  </script>
 </div>
