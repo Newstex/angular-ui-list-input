@@ -208,8 +208,26 @@ angular.module('ui.listInput', [])
 			}
 		});
 
-		// Update the parent scope whenever the local items change
-		$scope.$watch('items', syncItems, true);
+		// Update the parent scope whenever the local items change. When
+		// custom fields are not used, add validation classes corresponding to
+		// the state of the field.
+		$scope.$watch('items', function(items) {
+			syncItems(items);
+
+			if (!('customFields' in attributes)) {
+				$timeout(function() {
+					angular.forEach(element.find('input'), function(input) {
+						input = angular.element(input);
+						if (input.hasClass('ng-invalid')) {
+							input.parent().addClass('has-error');
+						}
+						else {
+							input.parent().removeClass('has-error');
+						}
+					});
+				});
+			}
+		}, true);
 
 		// Remove falsy items from the source data upon initialization
 		syncItems(listByRemovingFalsyItems($scope.$eval(attributes.ngModel), placeholderValue));
