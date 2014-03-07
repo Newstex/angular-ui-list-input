@@ -58,7 +58,7 @@ angular.module('ui.listInput', []).directive('uiListInput', [
           angular.forEach(element.find('ng-form'), function (form) {
             form = angular.element(form);
             var formScope = form.scope();
-            if (formScope[form.attr('name') + '.$invalid']) {
+            if (formScope[form.attr('name')].$invalid) {
               form.addClass('has-error');
             } else {
               form.removeClass('has-error');
