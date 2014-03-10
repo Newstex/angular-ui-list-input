@@ -47,11 +47,11 @@ angular.module('ui.listInput', []).directive('uiListInput', [
         }
         sourceItemsModel.assign(parentScope, parentItems);
       }
-      parentScope.$watchCollection(attributes.ngModel, function (items) {
+      parentScope.$watch(attributes.ngModel, function (items) {
         if (items && !angular.equals($scope.items.slice(0, $scope.items.length - 1), items)) {
           syncItems(listByRemovingFalsyItems(items, placeholderValue));
         }
-      });
+      }, true);
       $scope.$watch('items', function (items) {
         syncItems(items);
         if (!('customFields' in attributes)) {
