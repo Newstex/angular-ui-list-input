@@ -202,11 +202,11 @@ angular.module('ui.listInput', [])
 
 		// Keep one extra item for the new field and update upon any
 		// internal or external changes to the items
-		parentScope.$watchCollection(attributes.ngModel, function(items) {
+		parentScope.$watch(attributes.ngModel, function(items) {
 			if (items && !angular.equals($scope.items.slice(0, $scope.items.length - 1), items)) {
 				syncItems(listByRemovingFalsyItems(items, placeholderValue));
 			}
-		});
+		}, true);
 
 		// Update the parent scope whenever the local items change. When
 		// custom fields are not used, add validation classes corresponding to
