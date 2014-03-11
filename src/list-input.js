@@ -258,29 +258,35 @@ angular.module('ui.listInput', [])
 		 */
 		$scope.updateItems = function() {
 			$timeout(function() {
-				var indexOfFocusedField = $scope.indexOfFocusedField(),
-				listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems($scope.items, placeholderValue),
-				index;
-				var indexToFocus = indexOfFocusedField,
-				removedIndices = listAndRemovedIndices.removedIndices;
+				var listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems($scope.items, placeholderValue);
 
-				// Offset the focus by one for each item removed above the focused
-				// field
-				for (var i = 0; i < removedIndices.length; i++) {
-					index = removedIndices[i];
-
-					if (index < indexOfFocusedField) {
-						indexToFocus--;
-					}
-					else {
-						break;
-					}
+				if ('customFields' in attributes) {
+					syncItems(listAndRemovedIndices.list);
 				}
+				else {
+					var indexOfFocusedField = $scope.indexOfFocusedField();
+					var indexToFocus = indexOfFocusedField,
+					removedIndices = listAndRemovedIndices.removedIndices,
+					index;
 
-				syncItems(listAndRemovedIndices.list);	
+					// Offset the focus by one for each item removed above the focused
+					// field
+					for (var i = 0; i < removedIndices.length; i++) {
+						index = removedIndices[i];
 
-				if (indexToFocus >= 0) {
-					$scope.focusFieldAtIndex(indexToFocus);
+						if (index < indexOfFocusedField) {
+							indexToFocus--;
+						}
+						else {
+							break;
+						}
+					}
+
+					syncItems(listAndRemovedIndices.list);
+
+					if (indexToFocus >= 0 && indexToFocus != indexOfFocusedField) {
+						$scope.focusFieldAtIndex(indexToFocus);
+					}
 				}
 			});
 		};
@@ -419,6 +425,10 @@ angular.module('ui.listInput', [])
 				form.empty().append(transcluded.contents());
 
 				form.removeAttr('ng-class');
+
+				// Ensure that everything is updated on blur and empty fields are
+				// removed
+				transcludedInput.eq(transcludedInput.length - 1).attr('ng-blur', 'updateItems()');
 			}
 			else {
 				// The transcluded content did not have an input, so create one.
@@ -434,11 +444,11 @@ angular.module('ui.listInput', [])
 
 				// There should be an <input /> placeholder in the template
 				element.find('input').replaceWith(transcludedInput);
-			}
 
-			// Ensure that everything is updated on blur and empty fields are
-			// removed
-			transcludedInput.attr('ng-blur', 'didBlurFieldAtIndex($index);updateItems()');
+				// Ensure that everything is updated on blur and empty fields are
+				// removed
+				transcludedInput.attr('ng-blur', 'didBlurFieldAtIndex($index);updateItems()');
+			}
 		});
 
 		return link;
