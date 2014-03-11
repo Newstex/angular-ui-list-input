@@ -69,19 +69,24 @@ angular.module('ui.listInput', []).directive('uiListInput', [
       syncItems(listByRemovingFalsyItems($scope.$eval(attributes.ngModel), placeholderValue));
       $scope.updateItems = function () {
         $timeout(function () {
-          var indexOfFocusedField = $scope.indexOfFocusedField(), listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems($scope.items, placeholderValue), index;
-          var indexToFocus = indexOfFocusedField, removedIndices = listAndRemovedIndices.removedIndices;
-          for (var i = 0; i < removedIndices.length; i++) {
-            index = removedIndices[i];
-            if (index < indexOfFocusedField) {
-              indexToFocus--;
-            } else {
-              break;
+          var listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems($scope.items, placeholderValue);
+          if ('customFields' in attributes) {
+            syncItems(listAndRemovedIndices.list);
+          } else {
+            var indexOfFocusedField = $scope.indexOfFocusedField();
+            var indexToFocus = indexOfFocusedField, removedIndices = listAndRemovedIndices.removedIndices, index;
+            for (var i = 0; i < removedIndices.length; i++) {
+              index = removedIndices[i];
+              if (index < indexOfFocusedField) {
+                indexToFocus--;
+              } else {
+                break;
+              }
             }
-          }
-          syncItems(listAndRemovedIndices.list);
-          if (indexToFocus >= 0) {
-            $scope.focusFieldAtIndex(indexToFocus);
+            syncItems(listAndRemovedIndices.list);
+            if (indexToFocus >= 0 && indexToFocus != indexOfFocusedField) {
+              $scope.focusFieldAtIndex(indexToFocus);
+            }
           }
         });
       };
@@ -132,13 +137,14 @@ angular.module('ui.listInput', []).directive('uiListInput', [
       };
     }
     function compile(element, attributes, transclude) {
-      transclude($rootScope, function (clone) {
+      transclude($rootScope.$new(true), function (clone) {
         var transcluded = angular.element('<div></div>').append(clone);
         var transcludedInput = transcluded.find('input');
         if ('customFields' in attributes) {
           var form = element.find('ng-form');
           form.empty().append(transcluded.contents());
           form.removeAttr('ng-class');
+          transcludedInput.eq(transcludedInput.length - 1).attr('ng-blur', 'updateItems()');
         } else {
           if (transcludedInput.length === 0) {
             transcludedInput = angular.element('<input name="listItem" type="text" class="form-control" />');
@@ -146,8 +152,8 @@ angular.module('ui.listInput', []).directive('uiListInput', [
           transcludedInput.attr('name', 'listItem');
           transcludedInput.attr('ng-model', 'items[$index]');
           element.find('input').replaceWith(transcludedInput);
+          transcludedInput.attr('ng-blur', 'didBlurFieldAtIndex($index);updateItems()');
         }
-        transcludedInput.attr('ng-blur', 'didBlurFieldAtIndex($index);updateItems()');
       });
       return link;
     }

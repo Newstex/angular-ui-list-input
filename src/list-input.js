@@ -415,7 +415,7 @@ angular.module('ui.listInput', [])
 	function compile(element, attributes, transclude) {
 		// Parse any content that was included in this directive to pull out
 		// an input field 
-		transclude($rootScope, function(clone) {
+		transclude($rootScope.$new(true), function(clone) {
 			var transcluded = angular.element('<div></div>').append(clone);
 			var transcludedInput = transcluded.find('input');
 
