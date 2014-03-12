@@ -143,6 +143,7 @@ angular.module('ui.listInput', []).directive('uiListInput', [
         if ('customFields' in attributes) {
           var form = element.find('ng-form');
           form.empty().append(transcluded.contents());
+          form.children().removeAttr('ng-non-bindable');
           form.removeAttr('ng-class');
           transcludedInput.eq(transcludedInput.length - 1).attr('ng-blur', 'updateItems()');
         } else {
@@ -166,11 +167,18 @@ angular.module('ui.listInput', []).directive('uiListInput', [
       compile: compile
     };
   }
-]);
+]).directive('removeItemButton', function () {
+  return {
+    restrict: 'ACE',
+    templateUrl: 'remove-item-button.tpl.html',
+    replace: true
+  };
+});
 angular.module('ui.listInput').run([
   '$templateCache',
   function ($templateCache) {
     'use strict';
-    $templateCache.put('list-input.tpl.html', '<div class="list-input">\n' + '\t<div ng-repeat="doNotUse in items track by $index" class="list-input-item"> \n' + '\t\t<ng-form name="list-input-item" ng-class="{\'input-group\': !$last}">\n' + '\t\t\t<input />\n' + '\t\t\t<div class="input-group-addon btn" ng-click="removeItemAtIndex($index)" ng-hide="$last">\n' + '\t\t\t\t<span class="glyphicon glyphicon-remove"></span>\n' + '\t\t\t</div>\n' + '\t\t</ng-form>\n' + '\t</div>\n' + '</div>');
+    $templateCache.put('list-input.tpl.html', '<div class="list-input">\n' + '\t<div ng-repeat="doNotUse in items track by $index" class="list-input-item"> \n' + '\t\t<ng-form name="list-input-item" ng-class="{\'input-group\': !$last}">\n' + '\t\t\t<input />\n' + '\t\t\t<div remove-item-button></div>\n' + '\t\t</ng-form>\n' + '\t</div>\n' + '</div>');
+    $templateCache.put('remove-item-button.tpl.html', '<div class="input-group-addon btn" ng-click="removeItemAtIndex($index)" ng-show="!$last">\n' + '\t<span class="glyphicon glyphicon-remove"></span>\n' + '</div>');
   }
 ]);

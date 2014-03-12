@@ -424,6 +424,8 @@ angular.module('ui.listInput', [])
 
 				form.empty().append(transcluded.contents());
 
+				form.children().removeAttr('ng-non-bindable');
+
 				form.removeAttr('ng-class');
 
 				// Ensure that everything is updated on blur and empty fields are
