@@ -55,14 +55,22 @@ angular.module('ui.listInput', []).directive('uiListInput', [
       $scope.$watch('items', function (items) {
         syncItems(items);
         if (!('customFields' in attributes)) {
-          angular.forEach(element.find('ng-form'), function (form) {
-            form = angular.element(form);
-            var formScope = form.scope();
-            if (formScope[form.attr('name')].$invalid) {
-              form.addClass('has-error');
-            } else {
-              form.removeClass('has-error');
-            }
+          $timeout(function () {
+            var inputs = element.find('input');
+            angular.forEach(inputs, function (input, i) {
+              input = angular.element(input);
+              var controller = input.controller('ngModel');
+              if (i === inputs.length - 1) {
+                input.parent().removeClass('has-error');
+                for (var key in controller.$error) {
+                  controller.$setValidity(key, true);
+                }
+              } else if (controller.$invalid) {
+                input.parent().addClass('has-error');
+              } else {
+                input.parent().removeClass('has-error');
+              }
+            });
           });
         }
       }, true);
