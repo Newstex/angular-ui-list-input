@@ -473,4 +473,24 @@ angular.module('ui.listInput', [])
 		// to a simple ng-transclude
 		compile: compile
 	};
+})
+
+/**
+ * @ngdoc directive
+ * @name ui.listInput.directive:removeItemButton
+ * @restrict ACE
+ * 
+ * @description 
+ * Replaces the element on which the directive is applied with a standard
+ * .input-group-addon button for removing the item under which it appears in
+ * the list. Used internally in {@link ui.listInput.directive:uiListInput
+ * uiListInput} but may also be used in custom fields for uniformity and
+ * convenience.
+ */
+.directive('removeItemButton', function() {
+	return {
+		restrict: 'ACE',
+		templateUrl: 'remove-item-button.tpl.html',
+		replace: true
+	};
 });

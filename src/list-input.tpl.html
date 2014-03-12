@@ -2,9 +2,7 @@
 	<div ng-repeat="doNotUse in items track by $index" class="list-input-item"> 
 		<ng-form name="list-input-item" ng-class="{'input-group': !$last}">
 			<input />
-			<div class="input-group-addon btn" ng-click="removeItemAtIndex($index)" ng-hide="$last">
-				<span class="glyphicon glyphicon-remove"></span>
-			</div>
+			<div remove-item-button></div>
 		</ng-form>
 	</div>
 </div>
