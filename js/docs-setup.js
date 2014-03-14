@@ -5,6 +5,15 @@ NG_DOCS={
   "pages": [
     {
       "section": "api",
+      "id": "ui.listInput.directive:removeItemButton",
+      "shortName": "removeItemButton",
+      "type": "directive",
+      "moduleName": "ui.listInput",
+      "shortDescription": "Replaces the element on which the directive is applied with a standard",
+      "keywords": "ace api appears applied button convenience custom directive element fields input-group-addon internally item list listinput removing replaces standard ui uilistinput uniformity"
+    },
+    {
+      "section": "api",
       "id": "ui.listInput.directive:uiListInput",
       "shortName": "uiListInput",
       "type": "directive",
