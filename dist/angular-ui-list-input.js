@@ -187,6 +187,6 @@ angular.module('ui.listInput').run([
   function ($templateCache) {
     'use strict';
     $templateCache.put('list-input.tpl.html', '<div class="list-input">\n' + '\t<div ng-repeat="doNotUse in items track by $index" class="list-input-item"> \n' + '\t\t<ng-form name="list-input-item" ng-class="{\'input-group\': !$last}">\n' + '\t\t\t<input />\n' + '\t\t\t<div remove-item-button></div>\n' + '\t\t</ng-form>\n' + '\t</div>\n' + '</div>');
-    $templateCache.put('remove-item-button.tpl.html', '<div class="input-group-addon btn" ng-click="removeItemAtIndex($index)" ng-show="!$last">\n' + '\t<span class="glyphicon glyphicon-remove"></span>\n' + '</div>');
+    $templateCache.put('remove-item-button.tpl.html', '<div class="input-group-addon btn btn-default" ng-click="removeItemAtIndex($index)" ng-show="!$last">\n' + '\t<span class="glyphicon glyphicon-remove"></span>\n' + '</div>');
   }
 ]);
