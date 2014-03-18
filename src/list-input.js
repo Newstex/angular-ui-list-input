@@ -304,7 +304,7 @@ angular.module('ui.listInput', [])
 						$scope.focusFieldAtIndex(indexToFocus);
 					}
 				}
-			});
+			}, 100);
 		};
 
 		/**
