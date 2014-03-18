@@ -146,7 +146,7 @@ angular.module('ui.listInput', [])
 			for (var i = 0; i < sourceList.length; i++) {
 				item = sourceList[i];
 				if ((item || angular.isNumber(item)) && !angular.equals(item, placeholder)) {
-					list.push(angular.copy(item));
+					list.push(item);
 				}
 				else {
 					removedIndices.push(i);
@@ -180,8 +180,11 @@ angular.module('ui.listInput', [])
 		// falsy items; that must be done before calling this method as the
 		// logic is not always desired.
 		function syncItems(newItems) {
-			newItems = angular.copy(newItems);
-			var parentItems = angular.copy(newItems);
+			// Create shallow copies so that the contents are not altered but
+			// new and parent items can exist as separate lists with separate
+			// items.
+			newItems = newItems.slice();
+			var parentItems = newItems.slice();
 
 			// Add a placeholder at the end if there is not one yet
 			if (newItems && !angular.equals(newItems[newItems.length - 1], placeholderValue)) {
@@ -202,16 +205,16 @@ angular.module('ui.listInput', [])
 
 		// Keep one extra item for the new field and update upon any
 		// internal or external changes to the items
-		parentScope.$watch(attributes.ngModel, function(items) {
+		parentScope.$watchCollection(attributes.ngModel, function(items) {
 			if (items && !angular.equals($scope.items.slice(0, $scope.items.length - 1), items)) {
 				syncItems(listByRemovingFalsyItems(items, placeholderValue));
 			}
-		}, true);
+		});
 
 		// Update the parent scope whenever the local items change. When
 		// custom fields are not used, add validation classes corresponding to
 		// the state of the field.
-		$scope.$watch('items', function(items) {
+		$scope.$watchCollection('items', function(items) {
 			syncItems(items);
 
 			// Add has-error classes on invalid items
@@ -240,7 +243,7 @@ angular.module('ui.listInput', [])
 					});
 				});
 			}
-		}, true);
+		});
 
 		// Remove falsy items from the source data upon initialization
 		syncItems(listByRemovingFalsyItems($scope.$eval(attributes.ngModel), placeholderValue));
@@ -322,7 +325,7 @@ angular.module('ui.listInput', [])
 		 */
 		$scope.removeItemAtIndex = function(index) {
 			if (index >= 0 && index < $scope.items.length) {
-				var newItems = angular.copy($scope.items);
+				var newItems = $scope.items.slice();
 				newItems.splice(index, 1);
 				syncItems(newItems);
 
