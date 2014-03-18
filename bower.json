@@ -1,7 +1,7 @@
 {
   "name": "angular-ui-list-input",
   "version": "0.1.1",
-  "main": "dist/angular-ui-list-input.min.js",
+  "main": "dist/angular-ui-list-input.js",
   "ignore": [
     "docs",
     "src",
