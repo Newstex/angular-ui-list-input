@@ -214,7 +214,7 @@ angular.module('ui.listInput', [])
 		// Update the parent scope whenever the local items change. When
 		// custom fields are not used, add validation classes corresponding to
 		// the state of the field.
-		$scope.$watchCollection('items', function(items) {
+		$scope.$watch('items', function(items) {
 			syncItems(items);
 
 			// Add has-error classes on invalid items
@@ -243,7 +243,7 @@ angular.module('ui.listInput', [])
 					});
 				});
 			}
-		});
+		}, true);
 
 		// Remove falsy items from the source data upon initialization
 		syncItems(listByRemovingFalsyItems($scope.$eval(attributes.ngModel), placeholderValue));

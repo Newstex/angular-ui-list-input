@@ -10,7 +10,7 @@ angular.module('ui.listInput', []).directive('uiListInput', [
         for (var i = 0; i < sourceList.length; i++) {
           item = sourceList[i];
           if ((item || angular.isNumber(item)) && !angular.equals(item, placeholder)) {
-            list.push(angular.copy(item));
+            list.push(item);
           } else {
             removedIndices.push(i);
           }
@@ -34,8 +34,8 @@ angular.module('ui.listInput', []).directive('uiListInput', [
         placeholderValue = '';
       }
       function syncItems(newItems) {
-        newItems = angular.copy(newItems);
-        var parentItems = angular.copy(newItems);
+        newItems = newItems.slice();
+        var parentItems = newItems.slice();
         if (newItems && !angular.equals(newItems[newItems.length - 1], placeholderValue)) {
           newItems.push(angular.copy(placeholderValue));
         }
@@ -47,11 +47,11 @@ angular.module('ui.listInput', []).directive('uiListInput', [
         }
         sourceItemsModel.assign(parentScope, parentItems);
       }
-      parentScope.$watch(attributes.ngModel, function (items) {
+      parentScope.$watchCollection(attributes.ngModel, function (items) {
         if (items && !angular.equals($scope.items.slice(0, $scope.items.length - 1), items)) {
           syncItems(listByRemovingFalsyItems(items, placeholderValue));
         }
-      }, true);
+      });
       $scope.$watch('items', function (items) {
         syncItems(items);
         if (!('customFields' in attributes)) {
@@ -96,11 +96,11 @@ angular.module('ui.listInput', []).directive('uiListInput', [
               $scope.focusFieldAtIndex(indexToFocus);
             }
           }
-        });
+        }, 100);
       };
       $scope.removeItemAtIndex = function (index) {
         if (index >= 0 && index < $scope.items.length) {
-          var newItems = angular.copy($scope.items);
+          var newItems = $scope.items.slice();
           newItems.splice(index, 1);
           syncItems(newItems);
           if (blurredFieldIndex >= 0) {
