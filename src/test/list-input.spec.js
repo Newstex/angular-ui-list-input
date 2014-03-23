@@ -288,7 +288,7 @@ describe('ui.listInput', function() {
 
 				// The removed item was lower in the list, so the focus is
 				// already accurate
-				$directiveScope.focusFieldAtIndex.should.not.have.been.called();
+				$directiveScope.focusFieldAtIndex.should.not.have.been.called;
 			});
 
 			it('focuses the next field after clearing a field', function() {
