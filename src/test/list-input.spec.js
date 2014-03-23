@@ -285,7 +285,10 @@ describe('ui.listInput', function() {
 				$timeout.flush();
 
 				element.find(':input').should.have.length(3);
-				$directiveScope.focusFieldAtIndex.should.have.been.calledOnce.and.calledWith(itemToDelete - 1);
+
+				// The removed item was lower in the list, so the focus is
+				// already accurate
+				$directiveScope.focusFieldAtIndex.should.not.have.been.called;
 			});
 
 			it('focuses the next field after clearing a field', function() {

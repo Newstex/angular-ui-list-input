@@ -146,7 +146,7 @@ angular.module('ui.listInput', [])
 			for (var i = 0; i < sourceList.length; i++) {
 				item = sourceList[i];
 				if ((item || angular.isNumber(item)) && !angular.equals(item, placeholder)) {
-					list.push(angular.copy(item));
+					list.push(item);
 				}
 				else {
 					removedIndices.push(i);
@@ -180,8 +180,11 @@ angular.module('ui.listInput', [])
 		// falsy items; that must be done before calling this method as the
 		// logic is not always desired.
 		function syncItems(newItems) {
-			newItems = angular.copy(newItems);
-			var parentItems = angular.copy(newItems);
+			// Create shallow copies so that the contents are not altered but
+			// new and parent items can exist as separate lists with separate
+			// items.
+			newItems = newItems.slice();
+			var parentItems = newItems.slice();
 
 			// Add a placeholder at the end if there is not one yet
 			if (newItems && !angular.equals(newItems[newItems.length - 1], placeholderValue)) {
@@ -216,15 +219,28 @@ angular.module('ui.listInput', [])
 
 			// Add has-error classes on invalid items
 			if (!('customFields' in attributes)) {
-				angular.forEach(element.find('ng-form'), function(form) {
-					form = angular.element(form);
-					var formScope = form.scope();
-					if (formScope[form.attr('name')].$invalid) {
-						form.addClass('has-error');
-					}
-					else {
-						form.removeClass('has-error');
-					}
+				$timeout(function() {
+					var inputs = element.find('input');
+					angular.forEach(inputs, function(input, i) {
+						input = angular.element(input);
+						var controller = input.controller('ngModel');
+
+						// Remove any errors on the last field since it
+						// represents a new item and need not be valid
+						if (i === inputs.length - 1) {
+							input.parent().removeClass('has-error');
+
+							for (var key in controller.$error) {
+								controller.$setValidity(key, true);
+							}
+						}
+						else if (controller.$invalid) {
+							input.parent().addClass('has-error');
+						}
+						else {
+							input.parent().removeClass('has-error');
+						}
+					});
 				});
 			}
 		}, true);
@@ -258,31 +274,37 @@ angular.module('ui.listInput', [])
 		 */
 		$scope.updateItems = function() {
 			$timeout(function() {
-				var indexOfFocusedField = $scope.indexOfFocusedField(),
-				listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems($scope.items, placeholderValue),
-				index;
-				var indexToFocus = indexOfFocusedField,
-				removedIndices = listAndRemovedIndices.removedIndices;
+				var listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems($scope.items, placeholderValue);
 
-				// Offset the focus by one for each item removed above the focused
-				// field
-				for (var i = 0; i < removedIndices.length; i++) {
-					index = removedIndices[i];
+				if ('customFields' in attributes) {
+					syncItems(listAndRemovedIndices.list);
+				}
+				else {
+					var indexOfFocusedField = $scope.indexOfFocusedField();
+					var indexToFocus = indexOfFocusedField,
+					removedIndices = listAndRemovedIndices.removedIndices,
+					index;
 
-					if (index < indexOfFocusedField) {
-						indexToFocus--;
+					// Offset the focus by one for each item removed above the focused
+					// field
+					for (var i = 0; i < removedIndices.length; i++) {
+						index = removedIndices[i];
+
+						if (index < indexOfFocusedField) {
+							indexToFocus--;
+						}
+						else {
+							break;
+						}
 					}
-					else {
-						break;
+
+					syncItems(listAndRemovedIndices.list);
+
+					if (indexToFocus >= 0 && indexToFocus != indexOfFocusedField) {
+						$scope.focusFieldAtIndex(indexToFocus);
 					}
 				}
-
-				syncItems(listAndRemovedIndices.list);	
-
-				if (indexToFocus >= 0) {
-					$scope.focusFieldAtIndex(indexToFocus);
-				}
-			});
+			}, 100);
 		};
 
 		/**
@@ -303,7 +325,7 @@ angular.module('ui.listInput', [])
 		 */
 		$scope.removeItemAtIndex = function(index) {
 			if (index >= 0 && index < $scope.items.length) {
-				var newItems = angular.copy($scope.items);
+				var newItems = $scope.items.slice();
 				newItems.splice(index, 1);
 				syncItems(newItems);
 
@@ -409,7 +431,7 @@ angular.module('ui.listInput', [])
 	function compile(element, attributes, transclude) {
 		// Parse any content that was included in this directive to pull out
 		// an input field 
-		transclude($rootScope, function(clone) {
+		transclude($rootScope.$new(true), function(clone) {
 			var transcluded = angular.element('<div></div>').append(clone);
 			var transcludedInput = transcluded.find('input');
 
@@ -418,7 +440,13 @@ angular.module('ui.listInput', [])
 
 				form.empty().append(transcluded.contents());
 
+				form.children().removeAttr('ng-non-bindable');
+
 				form.removeAttr('ng-class');
+
+				// Ensure that everything is updated on blur and empty fields are
+				// removed
+				transcludedInput.eq(transcludedInput.length - 1).attr('ng-blur', 'updateItems()');
 			}
 			else {
 				// The transcluded content did not have an input, so create one.
@@ -434,11 +462,11 @@ angular.module('ui.listInput', [])
 
 				// There should be an <input /> placeholder in the template
 				element.find('input').replaceWith(transcludedInput);
-			}
 
-			// Ensure that everything is updated on blur and empty fields are
-			// removed
-			transcludedInput.attr('ng-blur', 'didBlurFieldAtIndex($index);updateItems()');
+				// Ensure that everything is updated on blur and empty fields are
+				// removed
+				transcludedInput.attr('ng-blur', 'didBlurFieldAtIndex($index);updateItems()');
+			}
 		});
 
 		return link;
@@ -462,5 +490,25 @@ angular.module('ui.listInput', [])
 		// Custom compilation does transclusion based on logic not available
 		// to a simple ng-transclude
 		compile: compile
+	};
+})
+
+/**
+ * @ngdoc directive
+ * @name ui.listInput.directive:removeItemButton
+ * @restrict ACE
+ * 
+ * @description 
+ * Replaces the element on which the directive is applied with a standard
+ * .input-group-addon button for removing the item under which it appears in
+ * the list. Used internally in {@link ui.listInput.directive:uiListInput
+ * uiListInput} but may also be used in custom fields for uniformity and
+ * convenience.
+ */
+.directive('removeItemButton', function() {
+	return {
+		restrict: 'ACE',
+		templateUrl: 'remove-item-button.tpl.html',
+		replace: true
 	};
 });

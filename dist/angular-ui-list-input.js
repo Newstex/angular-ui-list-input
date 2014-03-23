@@ -10,7 +10,7 @@ angular.module('ui.listInput', []).directive('uiListInput', [
         for (var i = 0; i < sourceList.length; i++) {
           item = sourceList[i];
           if ((item || angular.isNumber(item)) && !angular.equals(item, placeholder)) {
-            list.push(angular.copy(item));
+            list.push(item);
           } else {
             removedIndices.push(i);
           }
@@ -34,8 +34,8 @@ angular.module('ui.listInput', []).directive('uiListInput', [
         placeholderValue = '';
       }
       function syncItems(newItems) {
-        newItems = angular.copy(newItems);
-        var parentItems = angular.copy(newItems);
+        newItems = newItems.slice();
+        var parentItems = newItems.slice();
         if (newItems && !angular.equals(newItems[newItems.length - 1], placeholderValue)) {
           newItems.push(angular.copy(placeholderValue));
         }
@@ -55,39 +55,52 @@ angular.module('ui.listInput', []).directive('uiListInput', [
       $scope.$watch('items', function (items) {
         syncItems(items);
         if (!('customFields' in attributes)) {
-          angular.forEach(element.find('ng-form'), function (form) {
-            form = angular.element(form);
-            var formScope = form.scope();
-            if (formScope[form.attr('name')].$invalid) {
-              form.addClass('has-error');
-            } else {
-              form.removeClass('has-error');
-            }
+          $timeout(function () {
+            var inputs = element.find('input');
+            angular.forEach(inputs, function (input, i) {
+              input = angular.element(input);
+              var controller = input.controller('ngModel');
+              if (i === inputs.length - 1) {
+                input.parent().removeClass('has-error');
+                for (var key in controller.$error) {
+                  controller.$setValidity(key, true);
+                }
+              } else if (controller.$invalid) {
+                input.parent().addClass('has-error');
+              } else {
+                input.parent().removeClass('has-error');
+              }
+            });
           });
         }
       }, true);
       syncItems(listByRemovingFalsyItems($scope.$eval(attributes.ngModel), placeholderValue));
       $scope.updateItems = function () {
         $timeout(function () {
-          var indexOfFocusedField = $scope.indexOfFocusedField(), listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems($scope.items, placeholderValue), index;
-          var indexToFocus = indexOfFocusedField, removedIndices = listAndRemovedIndices.removedIndices;
-          for (var i = 0; i < removedIndices.length; i++) {
-            index = removedIndices[i];
-            if (index < indexOfFocusedField) {
-              indexToFocus--;
-            } else {
-              break;
+          var listAndRemovedIndices = listAndRemovedIndicesByRemovingFalsyItems($scope.items, placeholderValue);
+          if ('customFields' in attributes) {
+            syncItems(listAndRemovedIndices.list);
+          } else {
+            var indexOfFocusedField = $scope.indexOfFocusedField();
+            var indexToFocus = indexOfFocusedField, removedIndices = listAndRemovedIndices.removedIndices, index;
+            for (var i = 0; i < removedIndices.length; i++) {
+              index = removedIndices[i];
+              if (index < indexOfFocusedField) {
+                indexToFocus--;
+              } else {
+                break;
+              }
+            }
+            syncItems(listAndRemovedIndices.list);
+            if (indexToFocus >= 0 && indexToFocus != indexOfFocusedField) {
+              $scope.focusFieldAtIndex(indexToFocus);
             }
           }
-          syncItems(listAndRemovedIndices.list);
-          if (indexToFocus >= 0) {
-            $scope.focusFieldAtIndex(indexToFocus);
-          }
-        });
+        }, 100);
       };
       $scope.removeItemAtIndex = function (index) {
         if (index >= 0 && index < $scope.items.length) {
-          var newItems = angular.copy($scope.items);
+          var newItems = $scope.items.slice();
           newItems.splice(index, 1);
           syncItems(newItems);
           if (blurredFieldIndex >= 0) {
@@ -132,13 +145,15 @@ angular.module('ui.listInput', []).directive('uiListInput', [
       };
     }
     function compile(element, attributes, transclude) {
-      transclude($rootScope, function (clone) {
+      transclude($rootScope.$new(true), function (clone) {
         var transcluded = angular.element('<div></div>').append(clone);
         var transcludedInput = transcluded.find('input');
         if ('customFields' in attributes) {
           var form = element.find('ng-form');
           form.empty().append(transcluded.contents());
+          form.children().removeAttr('ng-non-bindable');
           form.removeAttr('ng-class');
+          transcludedInput.eq(transcludedInput.length - 1).attr('ng-blur', 'updateItems()');
         } else {
           if (transcludedInput.length === 0) {
             transcludedInput = angular.element('<input name="listItem" type="text" class="form-control" />');
@@ -146,8 +161,8 @@ angular.module('ui.listInput', []).directive('uiListInput', [
           transcludedInput.attr('name', 'listItem');
           transcludedInput.attr('ng-model', 'items[$index]');
           element.find('input').replaceWith(transcludedInput);
+          transcludedInput.attr('ng-blur', 'didBlurFieldAtIndex($index);updateItems()');
         }
-        transcludedInput.attr('ng-blur', 'didBlurFieldAtIndex($index);updateItems()');
       });
       return link;
     }
@@ -160,11 +175,18 @@ angular.module('ui.listInput', []).directive('uiListInput', [
       compile: compile
     };
   }
-]);
+]).directive('removeItemButton', function () {
+  return {
+    restrict: 'ACE',
+    templateUrl: 'remove-item-button.tpl.html',
+    replace: true
+  };
+});
 angular.module('ui.listInput').run([
   '$templateCache',
   function ($templateCache) {
     'use strict';
-    $templateCache.put('list-input.tpl.html', '<div class="list-input">\n' + '\t<div ng-repeat="doNotUse in items track by $index" class="list-input-item"> \n' + '\t\t<ng-form name="list-input-item" ng-class="{\'input-group\': !$last}">\n' + '\t\t\t<input />\n' + '\t\t\t<div class="input-group-addon btn" ng-click="removeItemAtIndex($index)" ng-hide="$last">\n' + '\t\t\t\t<span class="glyphicon glyphicon-remove"></span>\n' + '\t\t\t</div>\n' + '\t\t</ng-form>\n' + '\t</div>\n' + '</div>');
+    $templateCache.put('list-input.tpl.html', '<div class="list-input">\n' + '\t<div ng-repeat="doNotUse in items track by $index" class="list-input-item"> \n' + '\t\t<ng-form name="list-input-item" ng-class="{\'input-group\': !$last}">\n' + '\t\t\t<input />\n' + '\t\t\t<div remove-item-button></div>\n' + '\t\t</ng-form>\n' + '\t</div>\n' + '</div>');
+    $templateCache.put('remove-item-button.tpl.html', '<div class="input-group-addon btn btn-default" ng-click="removeItemAtIndex($index)" ng-show="!$last">\n' + '\t<span class="glyphicon glyphicon-remove"></span>\n' + '</div>');
   }
 ]);
