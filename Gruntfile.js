@@ -78,6 +78,7 @@ module.exports = function(grunt) {
 			],
 			tasks: ['before-test', 'after-test']
 		},
+		bumpup: ['package.json', 'bower.json'],
 		ngdocs: {
 			options: {
 				scripts: [
