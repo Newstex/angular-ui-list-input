@@ -230,8 +230,10 @@ angular.module('ui.listInput', [])
 						if (i === inputs.length - 1) {
 							input.parent().removeClass('has-error');
 
-							for (var key in controller.$error) {
-								controller.$setValidity(key, true);
+							if (controller.$error) {
+								for (var key in controller.$error) {
+									controller.$setValidity(key, true);
+								}
 							}
 						}
 						else if (controller.$invalid) {
