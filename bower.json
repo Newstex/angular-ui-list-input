@@ -1,6 +1,6 @@
 {
   "name": "angular-ui-list-input",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "dist/angular-ui-list-input.js",
   "ignore": [
     "docs",
@@ -14,12 +14,17 @@
     "package.json"
   ],
   "dependencies": {
-    "angular": "~1.2.14",
-    "bootstrap": "~3.1.1"
+    "angular": "~1.2.22",
+    "bootstrap": "~3.2.0",
+    "angular-mocks": "~1.2.22",
+    "angular-scenario": "~1.2.22"
   },
   "devDependencies": {
-    "angular-mocks": "~1.2.14",
-    "angular-scenario": "~1.2.14",
-    "jquery": "~2.1.0"
+    "angular-mocks": "~1.2.18",
+    "angular-scenario": "~1.2.18",
+    "jquery": "~2.1.1"
+  },
+  "resolutions": {
+    "angular": "~1.2.22"
   }
 }
