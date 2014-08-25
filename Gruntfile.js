@@ -104,6 +104,18 @@ module.exports = function(grunt) {
 				browsers: ['PhantomJS', 'Firefox']
 			}
 		},
+
+		shell: {
+			// Update package.json with latest versions
+			npmBump: {
+				command: './node_modules/npm-check-updates/bin/npm-check-updates -u'
+			},
+
+			// Update bower.json with latest versions
+			bowerBump: {
+				command: './node_modules/bower-update/bin/bower-update'
+			}
+		}
 	});
 
 	grunt.registerTask('before-test', ['ngtemplates', 'jshint:beforeConcat', 'concat']);
@@ -113,6 +125,13 @@ module.exports = function(grunt) {
 	grunt.registerTask('default', ['before-test', 'test', 'after-test']);
 	grunt.registerTask('livereload', ['before-test', 'after-test', 'watch']);
 	grunt.registerTask('docs', ['before-test', 'after-test', 'ngdocs']);
+
+	// Updates package.json and bower.json with latest versions of
+	// dependencies
+	grunt.registerTask('bumpDeps', [
+		'shell:npmBump',
+		'shell:bowerBump'
+	]);
 
 	grunt.registerTask('test', 'Run tests on singleRun karma server', function() {
 		if (process.env.TRAVIS) {
