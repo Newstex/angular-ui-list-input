@@ -14,17 +14,12 @@
     "package.json"
   ],
   "dependencies": {
-    "angular": "~1.2.22",
-    "bootstrap": "~3.2.0",
-    "angular-mocks": "~1.2.22",
-    "angular-scenario": "~1.2.22"
+    "angular": "^1.2.26",
+    "bootstrap": "~3.2.0"
   },
   "devDependencies": {
-    "angular-mocks": "~1.2.18",
-    "angular-scenario": "~1.2.18",
+    "angular-mocks": "^1.2.26",
+    "angular-scenario": "^1.2.26",
     "jquery": "~2.1.1"
-  },
-  "resolutions": {
-    "angular": "~1.2.22"
   }
 }
