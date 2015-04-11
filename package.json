@@ -1,5 +1,6 @@
 {
   "name": "angular-ui-list-input",
+  "main": "dist/angular-ui-list-input.js",
   "version": "0.2.1",
   "devDependencies": {
     "bower": "~1.3.9",
